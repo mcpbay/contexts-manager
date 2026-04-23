@@ -17,13 +17,15 @@ export interface IFrontMatterResult<T = Record<string, unknown>> {
 
 /**
  * Utility that extracts and parses YAML front matter from a string.
- * 
+ *
  * It identifies content between '---' delimiters at the beginning of the string.
- * 
+ *
  * @param filePath - The file path of the content file to parse.
  * @returns An object containing the parsed YAML data and the remaining content.
  */
-export async function parseFrontMatter<T = Record<string, unknown>>(filePath: string) {
+export async function parseFrontMatter<T = Record<string, unknown>>(
+  filePath: string,
+) {
   const content = await readFile(filePath);
   const frontMatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
   const match = content.match(frontMatterRegex);

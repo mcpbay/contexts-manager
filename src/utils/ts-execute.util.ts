@@ -23,8 +23,18 @@ export interface ITSExecuteOptions {
   };
 }
 
-export async function executeTypeScriptFile(scriptPath: string, options: ITSExecuteOptions) {
-  const { permissions, timeout, invoke, extraArguments, configFilePath, envFilePath, importsCwd } = options;
+export async function executeTypeScriptFile(
+  scriptPath: string,
+  options: ITSExecuteOptions,
+) {
+  const {
+    permissions,
+    timeout,
+    invoke,
+    extraArguments,
+    configFilePath,
+    envFilePath,
+  } = options;
   const args: string[] = ["run"];
   let code = await readFile(scriptPath);
 
@@ -114,7 +124,9 @@ if(_mcpb_result !== undefined) {
   const timeoutId = setTimeout(() => {
     try {
       child.kill("SIGKILL");
-    } catch { }
+    } catch {
+      // nop
+    }
   }, timeout);
 
   const { success, stderr, stdout } = await child.output();
@@ -130,185 +142,4 @@ if(_mcpb_result !== undefined) {
   const outMessage = decoder.decode(stdout).trim();
 
   return { outMessage, codeFilePath };
-}
-
-// export async function tsExecute(code: string, options: ITSExecuteOptions) {
-//   const { permissions, timeout, invoke } = options;
-//   const args: string[] = ["run"];
-
-//   code = removeStaticImports(code);
-//   code = code.replaceAll("import(", "_mcpb_import(");
-
-//   const mcpbImport = `
-// const allowedPackages: string[] = ${JSON.stringify(options.permissions.allowedPackages)
-//     };
-
-// function _mcpb_import(_packageName: string) {
-//   if (!allowedPackages.includes(_packageName)) {
-//     throw new Error(\`Invalid package import: "\${_packageName}".\`);
-//   }
-
-//   return import(_packageName);
-// }
-//   `.trim();
-
-//   code = `${mcpbImport}\n\n${code}`;
-
-//   if (invoke) {
-//     code += `
-// const _mcpb_result = await ${invoke.function}(...${JSON.stringify(invoke.arguments)
-//       });
-
-// //if (typeof _mcpb_result !== "object") {
-// //  throw new Error("Invalid function result, object expected.");
-// //}
-
-// if(_mcpb_result !== undefined) {
-//   console.log(JSON.stringify(_mcpb_result));
-// }`;
-//   }
-
-//   const codeFilePath = generateTempFile(code);
-//   const tempDir = dirname(codeFilePath);
-
-//   if (permissions.allowRead) {
-//     args.push(`--allow-read=./,${tempDir}`);
-//   }
-
-//   if (permissions.allowWrite) {
-//     args.push(`--allow-write=./,${tempDir}`);
-//   }
-
-//   if (permissions.allowNet.length) {
-//     args.push(`--allow-net=${permissions.allowNet.join(",")}`);
-//   }
-
-//   if (permissions.allowedExecutables.length) {
-//     args.push(`--allow-run=${permissions.allowedExecutables.join(",")}`);
-//   }
-
-//   args.push(`--allow-env=TMPDIR,TMP,TEMP`);
-//   args.push(`--unstable-kv`);
-//   args.push(codeFilePath);
-
-//   const command = new Deno.Command("deno", {
-//     args,
-//     cwd: options.cwd,
-//     // signal: AbortSignal.timeout(timeout),
-//     stdin: "null",
-//     stderr: "piped",
-//     stdout: "piped",
-//   });
-
-//   const decoder = new TextDecoder();
-//   const child = command.spawn();
-
-//   const timeoutId = setTimeout(() => {
-//     try {
-//       child.kill("SIGKILL");
-//     } catch { }
-//   }, timeout);
-
-//   const { success, stderr, stdout } = await child.output();
-
-//   clearTimeout(timeoutId);
-
-//   if (!success) {
-//     Deno.removeSync(codeFilePath);
-//     const errorMessage = decoder.decode(stderr);
-//     throw new Error(errorMessage);
-//   }
-
-//   const outMessage = decoder.decode(stdout).trim();
-
-//   return { outMessage, codeFilePath };
-// }
-
-function removeStaticImports(code: string) {
-  const len = code.length;
-  let i = 0;
-  let result = "";
-
-  let inSingle = false;
-  let inDouble = false;
-  let inTemplate = false;
-  let inLineComment = false;
-  let inBlockComment = false;
-
-  while (i < len) {
-    const c = code[i];
-    const next = code[i + 1];
-
-    // line comment
-    if (
-      !inSingle && !inDouble && !inTemplate && !inBlockComment && c === "/" &&
-      next === "/"
-    ) {
-      inLineComment = true;
-    }
-
-    if (inLineComment && c === "\n") {
-      inLineComment = false;
-    }
-
-    // block comment
-    if (
-      !inSingle && !inDouble && !inTemplate && !inLineComment && c === "/" &&
-      next === "*"
-    ) {
-      inBlockComment = true;
-    }
-
-    if (inBlockComment && c === "*" && next === "/") {
-      inBlockComment = false;
-      result += "*/";
-      i += 2;
-      continue;
-    }
-
-    if (inLineComment || inBlockComment) {
-      result += c;
-      i++;
-      continue;
-    }
-
-    // strings
-    if (!inDouble && !inTemplate && c === "'" && code[i - 1] !== "\\") {
-      inSingle = !inSingle;
-    } else if (!inSingle && !inTemplate && c === '"' && code[i - 1] !== "\\") {
-      inDouble = !inDouble;
-    } else if (!inSingle && !inDouble && c === "`" && code[i - 1] !== "\\") {
-      inTemplate = !inTemplate;
-    }
-
-    if (!inSingle && !inDouble && !inTemplate) {
-      // detect static import
-      if (code.startsWith("import", i)) {
-        const after = code[i + 6];
-
-        // skip dynamic import()
-        if (after === "(") {
-          result += "import";
-          i += 6;
-          continue;
-        }
-
-        // skip until semicolon or newline
-        let j = i;
-        while (j < len && code[j] !== ";" && code[j] !== "\n") {
-          j++;
-        }
-
-        if (code[j] === ";") j++;
-
-        i = j;
-        continue;
-      }
-    }
-
-    result += c;
-    i++;
-  }
-
-  return result;
 }

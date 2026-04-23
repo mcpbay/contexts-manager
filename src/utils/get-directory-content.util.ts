@@ -16,7 +16,7 @@ export interface IDirectoryContent {
 
 /**
  * Utility that retrieves all files and folders within a given directory path.
- * 
+ *
  * @param path - The directory path to read.
  * @returns An object containing arrays of files and folders.
  */

@@ -32,7 +32,7 @@ export interface IFilePathData {
 
 /**
  * Utility that extracts relevant path data from a given path.
- * 
+ *
  * @param path - The path to extract data from.
  * @returns An object containing the extracted path data.
  */

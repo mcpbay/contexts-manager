@@ -1,26 +1,28 @@
 export type IBuildElement = IBuildFolderElement | IBuildFileElement;
 
 export interface IBuildFileElement {
-  type: 'file';
+  type: "file";
   name: string;
   extension: string;
   content: string | object | Uint8Array;
 }
 
 export interface IBuildFolderElement {
-  type: 'folder';
+  type: "folder";
   name: string;
   files: IBuildElement[];
 }
 
-
 export function build(destPath: string, elements: IBuildElement[]) {
   for (const element of elements) {
     switch (element.type) {
-      case 'file':
-        Deno.writeFileSync(`${destPath}/${element.name}.${element.extension}`, toUint8Array(element.content));
+      case "file":
+        Deno.writeFileSync(
+          `${destPath}/${element.name}.${element.extension}`,
+          toUint8Array(element.content),
+        );
         break;
-      case 'folder': {
+      case "folder": {
         const folderPath = `${destPath}/${element.name}`;
         try {
           Deno.mkdirSync(folderPath, { recursive: true });
@@ -35,7 +37,7 @@ export function build(destPath: string, elements: IBuildElement[]) {
 }
 
 function toUint8Array(text: string | object | Uint8Array) {
-  if (typeof text === 'string') {
+  if (typeof text === "string") {
     return new TextEncoder().encode(text);
   }
 

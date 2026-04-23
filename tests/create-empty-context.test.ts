@@ -10,7 +10,7 @@ Deno.test("createEmptyContext - Success: Creates initial structure", () => {
     // Check main files
     const contextJsonPath = join(tempDir, "context.json");
     const denoJsonPath = join(tempDir, "deno.json");
-    
+
     assertExists(Deno.statSync(contextJsonPath));
     assertExists(Deno.statSync(denoJsonPath));
 
@@ -35,7 +35,6 @@ Deno.test("createEmptyContext - Success: Creates initial structure", () => {
     const denoJson = JSON.parse(Deno.readTextFileSync(denoJsonPath));
     assertExists(denoJson.imports["@std/assert"]);
     assertExists(denoJson.imports["zod"]);
-
   } finally {
     Deno.removeSync(tempDir, { recursive: true });
   }
@@ -63,7 +62,7 @@ Deno.test("createEmptyContext - Success: Directory already exists", () => {
     // Calling it twice should work (mkdirSync check)
     createEmptyContext(tempDir);
     createEmptyContext(tempDir);
-    
+
     assertExists(Deno.statSync(join(tempDir, "context.json")));
   } finally {
     Deno.removeSync(tempDir, { recursive: true });

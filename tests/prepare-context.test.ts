@@ -1,6 +1,6 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { join } from "@std/path";
-import { ITSExecuteOptions } from "../src/utils/ts-execute.util.ts";
+import type { ITSExecuteOptions } from "../src/utils/ts-execute.util.ts";
 import { prepareContext } from "../src/mod.ts";
 
 const projectRoot = "E:\\Git\\profit\\node\\mcpbay\\mcpbay-mcpb-core";
@@ -19,9 +19,12 @@ Deno.test("prepareContext - Success: Load resources and tools correctly", async 
       version: "1.0.0",
       description: "A test context",
       author: "Test Author",
-      tags: ["test"]
+      tags: ["test"],
     };
-    Deno.writeTextFileSync(join(tempDir, "context.json"), JSON.stringify(contextConfig));
+    Deno.writeTextFileSync(
+      join(tempDir, "context.json"),
+      JSON.stringify(contextConfig),
+    );
 
     // Markdown Resource
     const mdResourceContent = `---
@@ -78,19 +81,24 @@ title: Test MD Resource
     assertEquals(response.resources.length, 2);
     assertEquals(response.tools.length, 1);
 
-    const mdResource = response.resources.find(r => r.name === "test-md-resource");
+    const mdResource = response.resources.find((r) =>
+      r.name === "test-md-resource"
+    );
     assertEquals(mdResource?.title, "Test MD Resource");
 
-    const tsResource = response.resources.find(r => r.name === "test-ts-resource");
+    const tsResource = response.resources.find((r) =>
+      r.name === "test-ts-resource"
+    );
     assertEquals(tsResource?.mimeType, "text/plain");
 
-    const tool = response.tools.find(t => t.name === "test-tool");
+    const tool = response.tools.find((t) => t.name === "test-tool");
     assertEquals(tool?.description, "A test tool");
-
   } finally {
     try {
       Deno.removeSync(tempDir, { recursive: true });
-    } catch { }
+    } catch {
+      // nop
+    }
   }
 });
 
@@ -111,7 +119,11 @@ Deno.test("prepareContext - Failure: Context directory does not exist", async ()
     timeout: 5000,
   };
 
-  await assertRejects(() => prepareContext(nonExistentDir, options), Error, "Context dir");
+  await assertRejects(
+    () => prepareContext(nonExistentDir, options),
+    Error,
+    "Context dir",
+  );
 });
 
 Deno.test("prepareContext - Failure: context.json does not exist", async () => {
@@ -132,7 +144,11 @@ Deno.test("prepareContext - Failure: context.json does not exist", async () => {
   };
 
   try {
-    await assertRejects(() => prepareContext(tempDir, options), Error, "Context config");
+    await assertRejects(
+      () => prepareContext(tempDir, options),
+      Error,
+      "Context config",
+    );
   } finally {
     Deno.removeSync(tempDir, { recursive: true });
   }
@@ -146,9 +162,12 @@ Deno.test("prepareContext - Success: Load with no resources and tools folders", 
       version: "1.0.0",
       description: "A context without resources or tools folders",
       author: "Test Author",
-      tags: []
+      tags: [],
     };
-    Deno.writeTextFileSync(join(tempDir, "context.json"), JSON.stringify(contextConfig));
+    Deno.writeTextFileSync(
+      join(tempDir, "context.json"),
+      JSON.stringify(contextConfig),
+    );
 
     const options: ITSExecuteOptions = {
       importsCwd: projectRoot,
@@ -169,7 +188,6 @@ Deno.test("prepareContext - Success: Load with no resources and tools folders", 
 
     assertEquals(response.resources.length, 0);
     assertEquals(response.tools.length, 0);
-
   } finally {
     Deno.removeSync(tempDir, { recursive: true });
   }
@@ -182,7 +200,10 @@ Deno.test("prepareContext - Failure: context.json invalid format (missing requir
       // name is missing
       version: "1.0.0",
     };
-    Deno.writeTextFileSync(join(tempDir, "context.json"), JSON.stringify(contextConfig));
+    Deno.writeTextFileSync(
+      join(tempDir, "context.json"),
+      JSON.stringify(contextConfig),
+    );
 
     const options: ITSExecuteOptions = {
       importsCwd: projectRoot,
@@ -203,7 +224,6 @@ Deno.test("prepareContext - Failure: context.json invalid format (missing requir
     // In this case, name, version, description, author have .catch(), but tags doesn't.
     // If tags is missing, it should throw.
     await assertRejects(() => prepareContext(tempDir, options));
-
   } finally {
     Deno.removeSync(tempDir, { recursive: true });
   }
@@ -219,9 +239,12 @@ Deno.test("prepareContext - Failure: Tool metadata invalid format", async () => 
       version: "1.0.0",
       description: "desc",
       author: "author",
-      tags: []
+      tags: [],
     };
-    Deno.writeTextFileSync(join(tempDir, "context.json"), JSON.stringify(contextConfig));
+    Deno.writeTextFileSync(
+      join(tempDir, "context.json"),
+      JSON.stringify(contextConfig),
+    );
 
     const tsToolContent = `
       export function toolMeta() {
@@ -251,7 +274,6 @@ Deno.test("prepareContext - Failure: Tool metadata invalid format", async () => 
     };
 
     await assertRejects(() => prepareContext(tempDir, options));
-
   } finally {
     Deno.removeSync(tempDir, { recursive: true });
   }
@@ -267,9 +289,12 @@ Deno.test("prepareContext - Failure: Resource metadata invalid format", async ()
       version: "1.0.0",
       description: "desc",
       author: "author",
-      tags: []
+      tags: [],
     };
-    Deno.writeTextFileSync(join(tempDir, "context.json"), JSON.stringify(contextConfig));
+    Deno.writeTextFileSync(
+      join(tempDir, "context.json"),
+      JSON.stringify(contextConfig),
+    );
 
     // Markdown Resource with missing fields that don't have .catch()
     // Actually, contextResourceMetaJsonSchema has .catch() for name and description.
@@ -284,7 +309,10 @@ Deno.test("prepareContext - Failure: Resource metadata invalid format", async ()
         };
       }
     `;
-    Deno.writeTextFileSync(join(resourcesDir, "bad-resource.ts"), tsResourceContent);
+    Deno.writeTextFileSync(
+      join(resourcesDir, "bad-resource.ts"),
+      tsResourceContent,
+    );
 
     const options: ITSExecuteOptions = {
       importsCwd: projectRoot,
@@ -303,7 +331,6 @@ Deno.test("prepareContext - Failure: Resource metadata invalid format", async ()
     };
 
     await assertRejects(() => prepareContext(tempDir, options));
-
   } finally {
     Deno.removeSync(tempDir, { recursive: true });
   }

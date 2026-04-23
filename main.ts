@@ -1,11 +1,18 @@
 import type { IPrompt } from "@mcpbay/easy-mcp-server/types";
 import { parseFrontMatter } from "./src/utils/parse-front-matter.util.ts";
 import { crashIfNot } from "./src/utils/crash-if-not.util.ts";
-import { ITSExecuteOptions, executeTypeScriptFile } from "./src/utils/ts-execute.util.ts";
+import {
+  executeTypeScriptFile,
+  type ITSExecuteOptions,
+} from "./src/utils/ts-execute.util.ts";
 import * as z from "zod";
 import { toObject } from "./src/transformers/to-object.transformer.ts";
 import { isScriptResource } from "./src/validators/is-script-resource.validator.ts";
-import { IPreparedResource, IPreparedTool, prepareContext } from "./src/mod.ts";
+import {
+  type IPreparedResource,
+  type IPreparedTool,
+  prepareContext,
+} from "./src/mod.ts";
 import { build } from "./src/utils/build.util.ts";
 import { exists } from "./src/utils/exists.util.ts";
 
@@ -16,7 +23,10 @@ export class MCPContext {
   readonly #loadedPaths = new Set<string>();
 
   async loadContext(path: string, options: ITSExecuteOptions) {
-    crashIfNot(!this.#loadedPaths.has(path), `Context \`${path}\` already loaded.`);
+    crashIfNot(
+      !this.#loadedPaths.has(path),
+      `Context \`${path}\` already loaded.`,
+    );
 
     const { prompts, resources, tools } = await prepareContext(path, options);
 
@@ -26,8 +36,12 @@ export class MCPContext {
     this.#loadedPaths.add(path);
   }
 
-  async executeTool(name: string, args: Record<string, unknown>, options: ITSExecuteOptions) {
-    const tool = this.tools.find(tool => tool.name === name);
+  async executeTool(
+    name: string,
+    args: Record<string, unknown>,
+    options: ITSExecuteOptions,
+  ): Promise<object | null> {
+    const tool = this.tools.find((tool) => tool.name === name);
 
     crashIfNot(tool, `Tool \`${name}\` not found.`);
     z.fromJSONSchema(tool.inputSchema as Record<string, unknown>).parse(args);
@@ -38,10 +52,10 @@ export class MCPContext {
         ...options,
         configFilePath: tool.configFilePath ?? options.configFilePath,
         invoke: {
-          function: 'toolHandler',
+          function: "toolHandler",
           arguments: [args],
-        }
-      }
+        },
+      },
     );
 
     const toolResponse = toObject<object>(outMessage);
@@ -49,8 +63,11 @@ export class MCPContext {
     return toolResponse;
   }
 
-  async readResource(name: string, options: ITSExecuteOptions) {
-    const resource = this.resources.find(resource => resource.name === name);
+  async readResource(
+    name: string,
+    options: ITSExecuteOptions,
+  ): Promise<string> {
+    const resource = this.resources.find((resource) => resource.name === name);
 
     crashIfNot(resource, `Resource \`${name}\` not found.`);
 
@@ -63,13 +80,19 @@ export class MCPContext {
         invoke: {
           function: "resourceHandler",
           arguments: [],
-        }
+        },
       });
 
       const resourceResponse = toObject(outMessage);
 
-      crashIfNot(resourceResponse, `Resource \`${name}\` did not return a value.`);
-      crashIfNot(typeof resourceResponse === "string", `Resource \`${name}\` did not return a string.`);
+      crashIfNot(
+        resourceResponse,
+        `Resource \`${name}\` did not return a value.`,
+      );
+      crashIfNot(
+        typeof resourceResponse === "string",
+        `Resource \`${name}\` did not return a string.`,
+      );
 
       return resourceResponse.trim();
     }
@@ -89,8 +112,8 @@ export function createEmptyContext(path: string) {
     tasks: {},
     imports: {
       "@std/assert": "jsr:@std/assert@1",
-      "zod": "npm:zod@^4.3.6"
-    }
+      "zod": "npm:zod@^4.3.6",
+    },
   };
 
   const DEFAULT_CONTEXT_JSON_CONTENT = {
@@ -107,7 +130,7 @@ export function createEmptyContext(path: string) {
       allowRead: [],
       allowWrite: [],
       extraArguments: [],
-    }
+    },
   };
 
   const DEFAULT_RESOURCE_EXAMPLE_CONTENT = `
@@ -159,22 +182,53 @@ export function toolHandler(args: Record<string, string>) {
   `.trim();
 
   build(path, [
-    { type: "file", name: "context", extension: "json", content: DEFAULT_CONTEXT_JSON_CONTENT },
-    { type: "file", name: "deno", extension: "json", content: DEFAULT_DENO_JSON_CONTENT },
+    {
+      type: "file",
+      name: "context",
+      extension: "json",
+      content: DEFAULT_CONTEXT_JSON_CONTENT,
+    },
+    {
+      type: "file",
+      name: "deno",
+      extension: "json",
+      content: DEFAULT_DENO_JSON_CONTENT,
+    },
     { type: "folder", name: "tools", files: [] },
     {
-      type: "folder", name: "resources", files: [
-        { type: "file", name: "CONCEPT", extension: "md", content: DEFAULT_RESOURCE_EXAMPLE_CONTENT },
-        { type: "file", name: "CONCEPT", extension: "ts", content: DEFAULT_RESOURCE_SCRIPT_EXAMPLE_CONTENT },
-      ]
+      type: "folder",
+      name: "resources",
+      files: [
+        {
+          type: "file",
+          name: "CONCEPT",
+          extension: "md",
+          content: DEFAULT_RESOURCE_EXAMPLE_CONTENT,
+        },
+        {
+          type: "file",
+          name: "CONCEPT",
+          extension: "ts",
+          content: DEFAULT_RESOURCE_SCRIPT_EXAMPLE_CONTENT,
+        },
+      ],
     },
     {
-      type: "folder", name: "tools", files: [
-        { type: "file", name: "hello", extension: "ts", content: DEFAULT_TOOL_SCRIPT_EXAMPLE_CONTENT },
-      ]
+      type: "folder",
+      name: "tools",
+      files: [
+        {
+          type: "file",
+          name: "hello",
+          extension: "ts",
+          content: DEFAULT_TOOL_SCRIPT_EXAMPLE_CONTENT,
+        },
+      ],
     },
     {
-      type: "folder", name: "prompts", files: []
+      type: "folder",
+      name: "prompts",
+      files: [],
     },
   ]);
 }
@@ -186,7 +240,9 @@ export interface ILoadAndExecuteToolArguments {
   options: ITSExecuteOptions;
 }
 
-export async function loadAndExecuteTool(args: ILoadAndExecuteToolArguments) {
+export async function loadAndExecuteTool(
+  args: ILoadAndExecuteToolArguments,
+): Promise<object | null> {
   const { contextPath, toolName, args: toolArgs, options } = args;
   const context = new MCPContext();
 
@@ -205,7 +261,9 @@ export interface ILoadAndReadResourceArguments {
   options: ITSExecuteOptions;
 }
 
-export async function loadAndReadResource(args: ILoadAndReadResourceArguments) {
+export async function loadAndReadResource(
+  args: ILoadAndReadResourceArguments,
+): Promise<string> {
   const { contextPath, resourceName, options } = args;
   const context = new MCPContext();
 
