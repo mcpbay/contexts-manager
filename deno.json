@@ -1,0 +1,17 @@
+{
+  "name": "@mcpbay/contexts-manager",
+  "version": "1.0.0",
+  "license": "MIT",
+  "exports": "./main.ts",
+  "tasks": {
+    "dev": "deno run --watch main.ts"
+  },
+  "imports": {
+    "@mcpbay/easy-mcp-server": "jsr:@mcpbay/easy-mcp-server@^1.2.2",
+    "@online/is": "jsr:@online/is@^0.0.6",
+    "@std/assert": "jsr:@std/assert@1",
+    "@std/path": "jsr:@std/path@^1.1.4",
+    "@std/yaml": "jsr:@std/yaml@^1.0.12",
+    "zod": "npm:zod@^4.3.6"
+  }
+}

@@ -1,0 +1,180 @@
+import type { IPrompt } from "@mcpbay/easy-mcp-server/types";
+import { parseFrontMatter } from "./src/utils/parse-front-matter.util.ts";
+import { crashIfNot } from "./src/utils/crash-if-not.util.ts";
+import { ITSExecuteOptions, executeTypeScriptFile } from "./src/utils/ts-execute.util.ts";
+import * as z from "zod";
+import { toObject } from "./src/transformers/to-object.transformer.ts";
+import { isScriptResource } from "./src/validators/is-script-resource.validator.ts";
+import { IPreparedResource, IPreparedTool, prepareContext } from "./src/mod.ts";
+import { build } from "./src/utils/build.util.ts";
+import { exists } from "./src/utils/exists.util.ts";
+
+export class MCPContext {
+  public readonly tools: IPreparedTool[] = [];
+  public readonly resources: IPreparedResource[] = [];
+  public readonly prompts: IPrompt[] = [];
+  readonly #loadedPaths = new Set<string>();
+
+  async loadContext(path: string, options: ITSExecuteOptions) {
+    crashIfNot(!this.#loadedPaths.has(path), `Context \`${path}\` already loaded.`);
+
+    const { prompts, resources, tools } = await prepareContext(path, options);
+
+    this.prompts.push(...prompts);
+    this.resources.push(...resources);
+    this.tools.push(...tools);
+    this.#loadedPaths.add(path);
+  }
+
+  async executeTool(name: string, args: Record<string, unknown>, options: ITSExecuteOptions) {
+    const tool = this.tools.find(tool => tool.name === name);
+
+    crashIfNot(tool, `Tool \`${name}\` not found.`);
+    z.fromJSONSchema(tool.inputSchema as Record<string, unknown>).parse(args);
+
+    const { outMessage } = await executeTypeScriptFile(
+      tool.path,
+      {
+        ...options,
+        configFilePath: tool.configFilePath ?? options.configFilePath,
+        invoke: {
+          function: 'toolHandler',
+          arguments: [args],
+        }
+      }
+    );
+
+    const toolResponse = toObject<object>(outMessage);
+
+    return toolResponse;
+  }
+
+  async readResource(name: string, options: ITSExecuteOptions) {
+    const resource = this.resources.find(resource => resource.name === name);
+
+    crashIfNot(resource, `Resource \`${name}\` not found.`);
+
+    const filePath = resource.path;
+
+    if (isScriptResource(filePath)) {
+      const { outMessage } = await executeTypeScriptFile(filePath, {
+        ...options,
+        configFilePath: resource.configFilePath ?? options.configFilePath,
+        invoke: {
+          function: "resourceHandler",
+          arguments: [],
+        }
+      });
+
+      const resourceResponse = toObject(outMessage);
+
+      crashIfNot(resourceResponse, `Resource \`${name}\` did not return a value.`);
+      crashIfNot(typeof resourceResponse === "string", `Resource \`${name}\` did not return a string.`);
+
+      return resourceResponse.trim();
+    }
+
+    const parseDFrontMatter = await parseFrontMatter(filePath);
+
+    return parseDFrontMatter.content.trim();
+  }
+}
+
+export function createEmptyContext(path: string) {
+  if (!exists(path, true)) {
+    Deno.mkdirSync(path);
+  }
+
+  const DEFAULT_DENO_JSON_CONTENT = {
+    tasks: {},
+    imports: {
+      "@std/assert": "jsr:@std/assert@1",
+      "zod": "npm:zod@^4.3.6"
+    }
+  };
+
+  const DEFAULT_CONTEXT_JSON_CONTENT = {
+    name: "",
+    version: "1.0.0",
+    description: "A useful context for MCPBay!",
+    author: "godperson1",
+    tags: [],
+    typeScript: {
+      allowedPackages: ["jsr:@std/assert", "npm:zod"],
+      allowedExecutables: [],
+      allowedDomains: [],
+      allowedEnvs: [],
+      allowRead: [],
+      allowWrite: [],
+      extraArguments: [],
+    }
+  };
+
+  const DEFAULT_RESOURCE_EXAMPLE_CONTENT = `
+---
+name: CONCEPT
+description: My useful resource
+---
+# Example
+
+Resource context
+  `.trim();
+
+  const DEFAULT_RESOURCE_SCRIPT_EXAMPLE_CONTENT = `
+export function resourceMeta() {
+  return {
+    name: "concept",
+    description: "My useful resource",
+    title: "Concept",
+    mimeType: "text/markdown"
+  }
+}
+
+export function resourceHandler() {
+  return "Resource context";
+}
+  `.trim();
+
+  const DEFAULT_TOOL_SCRIPT_EXAMPLE_CONTENT = `
+import { z } from "zod";
+
+export function toolMeta() {
+  return {
+    name: "greeting_tool",
+    description: "Give me a greeting",
+    title: "Greeting Tool",
+    inputSchema: z.object({
+      name: z.string().describes("Name"),
+    }).toJSONSchema(),
+  }
+}
+
+export function toolHandler(args: Record<string, string>) {
+  const { name } = args;
+
+  return {
+    greeting: \`Hello, \${name}!\`,
+  }
+}
+  `.trim();
+
+  build(path, [
+    { type: "file", name: "context", extension: "json", content: DEFAULT_CONTEXT_JSON_CONTENT },
+    { type: "file", name: "deno", extension: "json", content: DEFAULT_DENO_JSON_CONTENT },
+    { type: "folder", name: "tools", files: [] },
+    {
+      type: "folder", name: "resources", files: [
+        { type: "file", name: "CONCEPT", extension: "md", content: DEFAULT_RESOURCE_EXAMPLE_CONTENT },
+        { type: "file", name: "CONCEPT", extension: "ts", content: DEFAULT_RESOURCE_SCRIPT_EXAMPLE_CONTENT },
+      ]
+    },
+    {
+      type: "folder", name: "tools", files: [
+        { type: "file", name: "hello", extension: "ts", content: DEFAULT_TOOL_SCRIPT_EXAMPLE_CONTENT },
+      ]
+    },
+    {
+      type: "folder", name: "prompts", files: []
+    },
+  ]);
+}
