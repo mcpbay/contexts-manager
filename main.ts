@@ -53,10 +53,11 @@ export class MCPContext {
         configFilePath: tool.configFilePath ?? options.configFilePath,
         invoke: {
           function: "toolHandler",
-          arguments: [args],
+          arguments: args ? [args] : [{}],
         },
       },
     );
+
 
     const toolResponse = toObject<object>(outMessage);
 
