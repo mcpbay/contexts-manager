@@ -25,8 +25,10 @@ Deno.test("prepareContext - Success: Load resources and tools correctly", async 
       join(tempDir, "context.json"),
       JSON.stringify(contextConfig),
     );
-
-    // Markdown Resource
+    Deno.writeTextFileSync(
+      join(tempDir, "deno.json"),
+      JSON.stringify({}),
+    );
     const mdResourceContent = `---
 name: test-md-resource
 description: A test markdown resource
@@ -245,7 +247,10 @@ Deno.test("prepareContext - Failure: Tool metadata invalid format", async () => 
       join(tempDir, "context.json"),
       JSON.stringify(contextConfig),
     );
-
+    Deno.writeTextFileSync(
+      join(tempDir, "deno.json"),
+      JSON.stringify({}),
+    );
     const tsToolContent = `
       export function toolMeta() {
         return {
@@ -295,8 +300,10 @@ Deno.test("prepareContext - Failure: Resource metadata invalid format", async ()
       join(tempDir, "context.json"),
       JSON.stringify(contextConfig),
     );
-
-    // Markdown Resource with missing fields that don't have .catch()
+    Deno.writeTextFileSync(
+      join(tempDir, "deno.json"),
+      JSON.stringify({}),
+    );
     // Actually, contextResourceMetaJsonSchema has .catch() for name and description.
     // So it might not throw but use "Resource name" / "Resource description".
 
