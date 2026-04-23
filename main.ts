@@ -178,3 +178,42 @@ export function toolHandler(args: Record<string, string>) {
     },
   ]);
 }
+
+export interface ILoadAndExecuteToolArguments {
+  contextPath: string;
+  toolName: string;
+  args: Record<string, unknown>;
+  options: ITSExecuteOptions;
+}
+
+export async function loadAndExecuteTool(args: ILoadAndExecuteToolArguments) {
+  const { contextPath, toolName, args: toolArgs, options } = args;
+  const context = new MCPContext();
+
+  await context.loadContext(contextPath, options);
+
+  const result = await context.executeTool(toolName, toolArgs, options);
+
+  console.log(result);
+
+  return result;
+}
+
+export interface ILoadAndReadResourceArguments {
+  contextPath: string;
+  resourceName: string;
+  options: ITSExecuteOptions;
+}
+
+export async function loadAndReadResource(args: ILoadAndReadResourceArguments) {
+  const { contextPath, resourceName, options } = args;
+  const context = new MCPContext();
+
+  await context.loadContext(contextPath, options);
+
+  const result = await context.readResource(resourceName, options);
+
+  console.log(result);
+
+  return result;
+}
