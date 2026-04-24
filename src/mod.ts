@@ -98,10 +98,19 @@ export async function prepareContext(
   );
 
   const contextConfig = readJsonFromFile<IContextConfig>(contextConfigPath);
+  const allowedEnvironments = contextConfig.typeScript?.allowedEnvironments ?? [];
+
+  for (const env of allowedEnvironments) {
+    crashIfNot(
+      Deno.env.has(env),
+      `Environment variable \`${env}\` is required but not set.`,
+    );
+  }
+
   const _options: ITSExecuteOptions = {
     ...options,
     permissions: {
-      allowedEnvironments: contextConfig.typeScript?.allowedEnvironments ?? [],
+      allowedEnvironments,
       allowedExecutables: contextConfig.typeScript?.allowedExecutables ?? [],
       allowedPackages: contextConfig.typeScript?.allowedPackages ?? [],
       allowedReadDirs: [],

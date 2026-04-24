@@ -120,7 +120,6 @@ if(_mcpb_result !== undefined) {
 
   const decoder = new TextDecoder();
   const child = command.spawn();
-
   const timeoutId = setTimeout(() => {
     try {
       child.kill("SIGKILL");

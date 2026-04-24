@@ -6,6 +6,7 @@ import { prepareContext } from "../src/mod.ts";
 const projectRoot = "E:\\Git\\profit\\node\\mcpbay\\mcpbay-mcpb-core";
 
 Deno.test("prepareContext - Exhaustive Config: Optional typeScript fields", async () => {
+  Deno.env.set("TEST_VAR", "value");
   const tempDir = Deno.makeTempDirSync();
   try {
     const contextConfig = {
@@ -50,6 +51,7 @@ Deno.test("prepareContext - Exhaustive Config: Optional typeScript fields", asyn
     assertEquals(response.resources.length, 0);
     assertEquals(response.tools.length, 0);
   } finally {
+    Deno.env.delete("TEST_VAR");
     Deno.removeSync(tempDir, { recursive: true });
   }
 });
