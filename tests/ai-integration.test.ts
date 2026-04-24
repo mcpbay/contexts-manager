@@ -86,7 +86,7 @@ Resource content here`,
     };
 
     // Load MCP
-    const { tools, system } = await loadMCP(contextDir, options);
+    const { tools, readResource } = await loadMCP(contextDir, options);
 
     // 1. Verify Tools conversion
     assertEquals(typeof tools.test_tool, "object");
@@ -96,10 +96,9 @@ Resource content here`,
     const toolResult = await tools.test_tool.execute({ val: "hello" });
     assertEquals(toolResult, { result: "Echo: hello" });
 
-    // 3. Verify System Prompt (Resources integration)
-    assertEquals(system.includes("### MCP Resources"), true);
-    assertEquals(system.includes("test_resource"), true);
-    assertEquals(system.includes("Resource content here"), true);
+    // 3. Verify readResource
+    const resourceContent = await readResource("test_resource");
+    assertEquals(resourceContent.includes("Resource content here"), true);
 
     // 4. Mock generateText Integration
     let step = 0;
@@ -118,7 +117,15 @@ Resource content here`,
               },
             ],
             finishReason: { unified: "tool-calls", raw: "stop" },
-            usage: { inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 10, text: 10, reasoning: 10 } },
+            usage: {
+              inputTokens: {
+                total: 10,
+                noCache: 10,
+                cacheRead: 0,
+                cacheWrite: 0,
+              },
+              outputTokens: { total: 10, text: 10, reasoning: 10 },
+            },
             warnings: [],
           };
         }
@@ -126,7 +133,15 @@ Resource content here`,
         return {
           content: [{ type: "text", text: "Finished." }],
           finishReason: { unified: "stop", raw: "stop" },
-          usage: { inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 10, text: 10, reasoning: 10 } },
+          usage: {
+            inputTokens: {
+              total: 10,
+              noCache: 10,
+              cacheRead: 0,
+              cacheWrite: 0,
+            },
+            outputTokens: { total: 10, text: 10, reasoning: 10 },
+          },
           warnings: [],
         };
       },
@@ -135,14 +150,13 @@ Resource content here`,
     const result = await generateText({
       model,
       tools,
-      system: `Base system. ${system}`,
+      system: `Base system. Resource: ${await readResource("test_resource")}`,
       prompt: "Execute the test tool with 'world'",
       maxRetries: 1,
     });
 
     // Check that generateText completed
     assertEquals(result.steps.length > 0, true);
-
   } finally {
     try {
       Deno.removeSync(tempDir, { recursive: true });

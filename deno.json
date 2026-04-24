@@ -1,10 +1,10 @@
 {
   "name": "@mcpbay/contexts-manager",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "MIT",
   "exports": {
     ".": "./main.ts",
-    "./ai": "./clients/ai.ts"
+    "./clients/ai": "./clients/ai.ts"
   },
   "tasks": {
     "dev": "deno run --watch main.ts"
@@ -21,7 +21,8 @@
   "lint": {
     "rules": {
       "exclude": [
-        "no-explicit-any"
+        "no-explicit-any",
+        "require-await"
       ]
     }
   }

@@ -58,7 +58,6 @@ export class MCPContext {
       },
     );
 
-
     const toolResponse = toObject<object>(outMessage);
 
     return toolResponse;

@@ -93,7 +93,7 @@ title: Test MD Resource
     );
     assertEquals(tsResource?.mimeType, "text/plain");
 
-    const tool = response.tools.find((t) => t.name === "test-tool");
+    const tool = response.tools.find((t) => t.name === "test_tool");
     assertEquals(tool?.description, "A test tool");
   } finally {
     try {

@@ -25,13 +25,13 @@ const contextConfigJsonSchema = z.object({
   author: z.string().trim().describe("Context author").catch("Context author"),
   tags: z.array(z.string().trim().toLowerCase()).describe("Context tags"),
   typeScript: z.object({
-    allowedPackages: z.array(z.string()),
-    allowedExecutables: z.array(z.string()),
-    allowedDomains: z.array(z.string()),
-    allowedEnvs: z.array(z.string()),
-    allowRead: z.boolean(),
-    allowWrite: z.boolean(),
-    extraArguments: z.array(z.string()),
+    allowedPackages: z.array(z.string()).optional().catch([]),
+    allowedExecutables: z.array(z.string()).optional().catch([]),
+    allowNetDomains: z.array(z.string()).optional().catch([]),
+    allowedEnvironments: z.array(z.string()).optional().catch([]),
+    allowRead: z.boolean().optional().catch(false),
+    allowWrite: z.boolean().optional().catch(false),
+    extraArguments: z.array(z.string()).optional().catch([]),
   }).optional(),
 });
 
@@ -61,9 +61,9 @@ const contextToolMetaJsonSchema = z.object({
     "Tool name",
   ),
   description: z.string().trim().describe("Tool description"),
-  inputSchema: z.object({}).describe("Tool input json schema"),
+  inputSchema: z.object({}).passthrough().describe("Tool input json schema"),
   title: z.string().trim().describe("Tool title").optional(),
-  outputSchema: z.object({}).describe(
+  outputSchema: z.object({}).passthrough().describe(
     "Tool output json schema, used for tool output validation on client-side",
   ).optional(),
 });
@@ -185,14 +185,14 @@ async function listTools(
 
       const response = toObject<Record<string, unknown>>(outMessage);
 
-      contextToolMetaJsonSchema.parse(response);
+      const parsedToolMeta = contextToolMetaJsonSchema.parse(response);
 
       tools.push({
-        name: response!.name as string,
-        title: response!.title as string | undefined,
-        description: response!.description as string,
-        inputSchema: response!.inputSchema as object,
-        outputSchema: response!.outputSchema as object,
+        name: parsedToolMeta.name,
+        title: parsedToolMeta.title,
+        description: parsedToolMeta.description,
+        inputSchema: parsedToolMeta.inputSchema,
+        outputSchema: parsedToolMeta.outputSchema,
         path: filePath,
         configFilePath: options.configFilePath,
       });
@@ -259,14 +259,15 @@ async function listResources(
 
       const response = toObject<Record<string, unknown>>(result.outMessage);
 
-      contextResourceScriptMetaResponseJsonSchema.parse(response);
+      const parsedResourceMeta = contextResourceScriptMetaResponseJsonSchema
+        .parse(response);
 
       resources.push({
-        description: response!.description as string,
-        name: response!.name as string,
-        mimeType: response!.mimeType as string,
+        description: parsedResourceMeta.description,
+        name: parsedResourceMeta.name,
+        mimeType: parsedResourceMeta.mimeType,
         uri: filePath,
-        title: response!.title as string | undefined,
+        title: parsedResourceMeta.title,
         path: filePath,
         configFilePath: options.configFilePath,
       });
