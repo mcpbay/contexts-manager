@@ -68,22 +68,59 @@ const contextToolMetaJsonSchema = z.object({
   ).optional(),
 });
 
+/**
+ * Represents a tool that has been prepared with its execution path.
+ */
 export interface IPreparedTool extends ITool {
+  /**
+   * The absolute path to the tool implementation.
+   */
   path: string;
+  /**
+   * Optional path to the configuration file for the tool.
+   */
   configFilePath?: string;
 }
 
+/**
+ * Represents a resource that has been prepared with its file path.
+ */
 export interface IPreparedResource extends IResource {
+  /**
+   * The absolute path to the resource file.
+   */
   path: string;
+  /**
+   * Optional path to the configuration file for the resource.
+   */
   configFilePath?: string;
 }
 
+/**
+ * The response object returned after preparing a context.
+ */
 export interface IPreparedContextResponse {
+  /**
+   * List of prepared resources.
+   */
   resources: IPreparedResource[];
+  /**
+   * List of prepared tools.
+   */
   tools: IPreparedTool[];
+  /**
+   * List of prompts.
+   */
   prompts: IPrompt[];
 }
 
+/**
+ * Prepares the MCP context by reading configuration, listing tools, and listing resources.
+ * 
+ * @param path - The directory path of the context.
+ * @param options - Execution options for the tools and resources.
+ * @returns A promise resolving to the prepared context.
+ */
 export async function prepareContext(
   path: string,
   options: Omit<ITSExecuteOptions, "permissions">,

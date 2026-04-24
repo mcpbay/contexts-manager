@@ -27,9 +27,24 @@ export interface IMCPContextAiOptions extends ITSExecuteOptions {
   };
 }
 
+/**
+ * Response returned by the loadMCP function.
+ */
 export interface ILoadMCPResponse {
+  /**
+   * A record of tools compatible with Vercel's AI SDK.
+   */
   tools: Record<string, any>;
+  /**
+   * Function to read the content of a resource.
+   * 
+   * @param name - The name of the resource.
+   * @returns The content of the resource.
+   */
   readResource(name: string): Promise<string>;
+  /**
+   * The underlying MCPContext instance.
+   */
   context: MCPContext;
 }
 

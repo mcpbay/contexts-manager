@@ -2,27 +2,85 @@ import { dirname } from "@std/path";
 import { generateTempFile } from "./generate-temp-file.util.ts";
 import { readFile } from "./read-file.util.ts";
 
+/**
+ * Options for executing a TypeScript file using Deno.
+ */
 export interface ITSExecuteOptions {
+  /**
+   * The working directory URL or path for resolving imports.
+   */
   importsCwd: URL | string;
+  /**
+   * The working directory URL or path for the project.
+   */
   projectCwd: URL | string;
+  /**
+   * Execution permissions for the Deno subprocess.
+   */
   permissions: {
+    /**
+     * Directories allowed for read operations.
+     */
     allowedReadDirs: string[];
+    /**
+     * Directories allowed for write operations.
+     */
     allowedWriteDirs: string[];
+    /**
+     * Network domains allowed for access.
+     */
     allowNetDomains: string[];
+    /**
+     * Allowed external packages.
+     */
     allowedPackages: string[];
+    /**
+     * Allowed executables.
+     */
     allowedExecutables: string[];
+    /**
+     * Allowed environment variables.
+     */
     allowedEnvironments: string[];
   };
+  /**
+   * Additional command-line arguments for Deno.
+   */
   extraArguments: string[];
+  /**
+   * Timeout for the execution in milliseconds.
+   */
   timeout: number;
+  /**
+   * Optional path to a Deno configuration file (deno.json).
+   */
   configFilePath?: string;
+  /**
+   * Optional path to an environment variable file.
+   */
   envFilePath?: string;
+  /**
+   * Optional function to invoke in the script.
+   */
   invoke?: {
+    /**
+     * Name of the function to call.
+     */
     function: string;
+    /**
+     * Arguments to pass to the function.
+     */
     arguments: unknown[];
   };
 }
 
+/**
+ * Executes a TypeScript file in a controlled Deno environment.
+ * 
+ * @param scriptPath - The path to the TypeScript script.
+ * @param options - Execution options.
+ * @returns An object containing the output message and the temporary file path used.
+ */
 export async function executeTypeScriptFile(
   scriptPath: string,
   options: ITSExecuteOptions,
