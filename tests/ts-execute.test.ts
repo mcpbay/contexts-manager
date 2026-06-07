@@ -1,20 +1,22 @@
-import { assertEquals } from "@std/assert";
+import { expect, test } from "@libs/testing";
 import {
   executeTypeScriptFile,
   type ITSExecuteOptions,
 } from "../src/utils/ts-execute.util.ts";
 import { join } from "@std/path";
+import { makeTempFileSync, removeSync, writeTextFileSync } from "../src/utils/fs.util.ts";
 
 const projectRoot = "E:\\Git\\profit\\node\\mcpbay\\mcpbay-mcpb-core";
 
-Deno.test("executeTypeScriptFile - response robustness (object)", async () => {
+test("executeTypeScriptFile - response robustness (object)", async () => {
   const scriptContent = `
     export function testFn(arg: any) {
       return { received: arg, status: "ok" };
     }
   `;
-  const scriptPath = Deno.makeTempFileSync({ suffix: ".ts" });
-  await Deno.writeTextFile(scriptPath, scriptContent);
+  const scriptPath = makeTempFileSync("ts");
+
+  writeTextFileSync(scriptPath, scriptContent);
 
   const options: ITSExecuteOptions = {
     importsCwd: projectRoot,
@@ -39,25 +41,27 @@ Deno.test("executeTypeScriptFile - response robustness (object)", async () => {
   try {
     const result = await executeTypeScriptFile(scriptPath, options);
     const parsed = JSON.parse(result.outMessage);
-    assertEquals(parsed, { received: "hello world", status: "ok" });
+
+    expect(parsed).toEqual({ received: "hello world", status: "ok" });
   } finally {
     try {
-      await Deno.remove(scriptPath);
+      await removeSync(scriptPath);
     } catch {
-      // nop
+      // empty
     }
   }
 });
 
-Deno.test("executeTypeScriptFile - response robustness (primitive types)", async () => {
+test("executeTypeScriptFile - response robustness (primitive types)", async () => {
   const scriptContent = `
     export function returnString() { return "hello"; }
     export function returnNumber() { return 123; }
     export function returnBoolean() { return true; }
     export function returnNull() { return null; }
   `;
-  const scriptPath = Deno.makeTempFileSync({ suffix: ".ts" });
-  await Deno.writeTextFile(scriptPath, scriptContent);
+  const scriptPath = makeTempFileSync("ts");
+
+  writeTextFileSync(scriptPath, scriptContent);
 
   const baseOptions: ITSExecuteOptions = {
     importsCwd: projectRoot,
@@ -76,54 +80,52 @@ Deno.test("executeTypeScriptFile - response robustness (primitive types)", async
   };
 
   try {
-    // String
     const resString = await executeTypeScriptFile(scriptPath, {
       ...baseOptions,
       invoke: { function: "returnString", arguments: [] },
     });
-    assertEquals(resString.outMessage, '"hello"');
 
-    // Number
+    expect(resString.outMessage).toBe('"hello"');
+
     const resNumber = await executeTypeScriptFile(scriptPath, {
       ...baseOptions,
       invoke: { function: "returnNumber", arguments: [] },
     });
-    assertEquals(resNumber.outMessage, "123");
 
-    // Boolean
+    expect(resNumber.outMessage).toBe("123");
+
     const resBoolean = await executeTypeScriptFile(scriptPath, {
       ...baseOptions,
       invoke: { function: "returnBoolean", arguments: [] },
     });
-    assertEquals(resBoolean.outMessage, "true");
 
-    // Null
+    expect(resBoolean.outMessage).toBe("true");
+
     const resNull = await executeTypeScriptFile(scriptPath, {
       ...baseOptions,
       invoke: { function: "returnNull", arguments: [] },
     });
-    assertEquals(resNull.outMessage, "null");
+
+    expect(resNull.outMessage).toBe("null");
   } finally {
     try {
-      await Deno.remove(scriptPath);
+      removeSync(scriptPath);
     } catch {
-      // nop
+      // empty
     }
   }
 });
 
-Deno.test("executeTypeScriptFile - deno.json configuration (import map)", async () => {
-  // Create a temporary deno.json with an import map
-  // Note: Deno requires absolute paths or valid URLs in import maps if they are not relative to the config file.
-  // We'll use a data URL for simplicity in the import map.
+test("executeTypeScriptFile - deno.json configuration (import map)", async () => {
   const configContent = JSON.stringify({
     "imports": {
       "dummy-pkg":
         "data:text/javascript,export const value = 'from-import-map';",
     },
   });
-  const configPath = Deno.makeTempFileSync({ suffix: ".json" });
-  await Deno.writeTextFile(configPath, configContent);
+  const configPath = makeTempFileSync("json");
+
+  await writeTextFileSync(configPath, configContent);
 
   const scriptContent = `
     import { value } from "dummy-pkg";
@@ -131,8 +133,9 @@ Deno.test("executeTypeScriptFile - deno.json configuration (import map)", async 
       return value;
     }
   `;
-  const scriptPath = Deno.makeTempFileSync({ suffix: ".ts" });
-  await Deno.writeTextFile(scriptPath, scriptContent);
+  const scriptPath = makeTempFileSync("ts");
+
+  writeTextFileSync(scriptPath, scriptContent);
 
   const options: ITSExecuteOptions = {
     importsCwd: projectRoot,
@@ -156,29 +159,31 @@ Deno.test("executeTypeScriptFile - deno.json configuration (import map)", async 
 
   try {
     const result = await executeTypeScriptFile(scriptPath, options);
-    assertEquals(result.outMessage, '"from-import-map"');
+
+    expect(result.outMessage).toBe('"from-import-map"');
   } finally {
     try {
-      await Deno.remove(scriptPath);
+      removeSync(scriptPath);
     } catch {
-      // nop
+      // empty
     }
     try {
-      await Deno.remove(configPath);
+      removeSync(configPath);
     } catch {
-      // nop
+      // empty
     }
   }
 });
 
-Deno.test("executeTypeScriptFile - without config and env paths", async () => {
+test("executeTypeScriptFile - without config and env paths", async () => {
   const scriptContent = `
     export function hello() {
       return "world";
     }
   `;
-  const scriptPath = Deno.makeTempFileSync({ suffix: ".ts" });
-  await Deno.writeTextFile(scriptPath, scriptContent);
+  const scriptPath = makeTempFileSync("ts");
+
+  await writeTextFileSync(scriptPath, scriptContent);
 
   const options: ITSExecuteOptions = {
     importsCwd: projectRoot,
@@ -201,12 +206,13 @@ Deno.test("executeTypeScriptFile - without config and env paths", async () => {
 
   try {
     const result = await executeTypeScriptFile(scriptPath, options);
-    assertEquals(result.outMessage, '"world"');
+
+    expect(result.outMessage).toBe('"world"');
   } finally {
     try {
-      await Deno.remove(scriptPath);
+      await removeSync(scriptPath);
     } catch {
-      // nop
+      // empty
     }
   }
 });

@@ -15,36 +15,19 @@ import {
 } from "./src/mod.ts";
 import { build } from "./src/utils/build.util.ts";
 import { exists } from "./src/utils/exists.util.ts";
+import { mkdirSync } from "./src/utils/fs.util.ts";
 
-/**
- * Manages multiple MCP (Model Context Protocol) contexts.
- * Allows loading contexts, executing tools, and reading resources.
- */
 export class MCPContext {
-  /**
-   * List of prepared tools available in the context.
-   */
   public readonly tools: IPreparedTool[] = [];
-  /**
-   * List of prepared resources available in the context.
-   */
   public readonly resources: IPreparedResource[] = [];
-  /**
-   * List of prompts available in the context.
-   */
   public readonly prompts: IPrompt[] = [];
   readonly #loadedPaths = new Set<string>();
 
-  /**
-   * Loads an MCP context from a given path.
-   * 
-   * @param path - The absolute path to the context directory.
-   * @param options - Execution options for the context.
-   * @throws Will throw an error if the context at the given path is already loaded.
-   */
   async loadContext(path: string, options: ITSExecuteOptions) {
+    const isAlreadyLoaded = this.#loadedPaths.has(path);
+
     crashIfNot(
-      !this.#loadedPaths.has(path),
+      !isAlreadyLoaded,
       `Context \`${path}\` already loaded.`,
     );
 
@@ -56,15 +39,6 @@ export class MCPContext {
     this.#loadedPaths.add(path);
   }
 
-  /**
-   * Executes a tool by name with the provided arguments.
-   * 
-   * @param name - The name of the tool to execute.
-   * @param args - The arguments for the tool.
-   * @param options - Execution options.
-   * @returns The result of the tool execution.
-   * @throws Will throw an error if the tool is not found.
-   */
   async executeTool(
     name: string,
     args: Record<string, unknown>,
@@ -73,6 +47,7 @@ export class MCPContext {
     const tool = this.tools.find((tool) => tool.name === name);
 
     crashIfNot(tool, `Tool \`${name}\` not found.`);
+
     z.fromJSONSchema(tool.inputSchema as Record<string, unknown>).parse(args);
 
     const { outMessage } = await executeTypeScriptFile(
@@ -92,14 +67,6 @@ export class MCPContext {
     return toolResponse;
   }
 
-  /**
-   * Reads a resource by name.
-   * 
-   * @param name - The name of the resource to read.
-   * @param options - Execution options.
-   * @returns The content of the resource.
-   * @throws Will throw an error if the resource is not found or returns an invalid value.
-   */
   async readResource(
     name: string,
     options: ITSExecuteOptions,
@@ -109,8 +76,9 @@ export class MCPContext {
     crashIfNot(resource, `Resource \`${name}\` not found.`);
 
     const filePath = resource.path;
+    const isScript = isScriptResource(filePath);
 
-    if (isScriptResource(filePath)) {
+    if (isScript) {
       const { outMessage } = await executeTypeScriptFile(filePath, {
         ...options,
         configFilePath: resource.configFilePath ?? options.configFilePath,
@@ -122,12 +90,15 @@ export class MCPContext {
 
       const resourceResponse = toObject(outMessage);
 
+      const isResourceResponseNull = !resourceResponse;
+      const isResourceResponseNotString = typeof resourceResponse !== "string";
+
       crashIfNot(
-        resourceResponse,
+        !isResourceResponseNull,
         `Resource \`${name}\` did not return a value.`,
       );
       crashIfNot(
-        typeof resourceResponse === "string",
+        !isResourceResponseNotString,
         `Resource \`${name}\` did not return a string.`,
       );
 
@@ -140,14 +111,11 @@ export class MCPContext {
   }
 }
 
-/**
- * Creates a new, empty MCPBay context structure at the specified path.
- * 
- * @param path - The directory where the new context should be created.
- */
 export function createEmptyContext(path: string) {
-  if (!exists(path, true)) {
-    Deno.mkdirSync(path);
+  const isDirectoryExists = exists(path, true);
+
+  if (!isDirectoryExists) {
+    mkdirSync(path);
   }
 
   const DEFAULT_DENO_JSON_CONTENT = {
@@ -275,34 +243,13 @@ export function toolHandler(args: Record<string, string>) {
   ]);
 }
 
-/**
- * Arguments for loading and executing a tool.
- */
 export interface ILoadAndExecuteToolArguments {
-  /**
-   * Absolute path to the MCP context directory.
-   */
   contextPath: string;
-  /**
-   * Name of the tool to execute.
-   */
   toolName: string;
-  /**
-   * Arguments for the tool.
-   */
   args: Record<string, unknown>;
-  /**
-   * Execution options.
-   */
   options: ITSExecuteOptions;
 }
 
-/**
- * Loads a context and executes a tool in a single operation.
- * 
- * @param args - The arguments for loading and execution.
- * @returns The result of the tool execution.
- */
 export async function loadAndExecuteTool(
   args: ILoadAndExecuteToolArguments,
 ): Promise<object | null> {
@@ -318,30 +265,12 @@ export async function loadAndExecuteTool(
   return result;
 }
 
-/**
- * Arguments for loading and reading a resource.
- */
 export interface ILoadAndReadResourceArguments {
-  /**
-   * Absolute path to the MCP context directory.
-   */
   contextPath: string;
-  /**
-   * Name of the resource to read.
-   */
   resourceName: string;
-  /**
-   * Execution options.
-   */
   options: ITSExecuteOptions;
 }
 
-/**
- * Loads a context and reads a resource in a single operation.
- * 
- * @param args - The arguments for loading and reading.
- * @returns The content of the resource.
- */
 export async function loadAndReadResource(
   args: ILoadAndReadResourceArguments,
 ): Promise<string> {

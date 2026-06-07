@@ -1,21 +1,27 @@
-// Thanks Deepseek!
+import { envGet } from "./fs.util.ts";
+
 export function expandTilde(path: string) {
-  if (!path.startsWith("~")) {
+  const hasTildePrefix = path.startsWith("~");
+
+  if (!hasTildePrefix) {
     return path;
   }
 
-  const home = Deno.env.get("HOME") ??
-    Deno.env.get("USERPROFILE");
+  const home = envGet("HOME") ?? envGet("USERPROFILE");
 
   if (!home) {
     return null;
   }
 
-  if (path === "~") {
+  const isTildeOnly = path === "~";
+
+  if (isTildeOnly) {
     return home;
   }
 
-  if (path.startsWith("~/") || path.startsWith("~\\")) {
+  const hasTildeSlashPrefix = path.startsWith("~/") || path.startsWith("~\\");
+
+  if (hasTildeSlashPrefix) {
     return home + path.slice(1);
   }
 

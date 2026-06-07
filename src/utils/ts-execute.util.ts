@@ -1,86 +1,29 @@
 import { dirname } from "@std/path";
 import { generateTempFile } from "./generate-temp-file.util.ts";
 import { readFile } from "./read-file.util.ts";
+import { removeSync, createDenoCommand } from "./fs.util.ts";
 
-/**
- * Options for executing a TypeScript file using Deno.
- */
 export interface ITSExecuteOptions {
-  /**
-   * The working directory URL or path for resolving imports.
-   */
   importsCwd: URL | string;
-  /**
-   * The working directory URL or path for the project.
-   */
   projectCwd: URL | string;
-  /**
-   * Execution permissions for the Deno subprocess.
-   */
   permissions: {
-    /**
-     * Directories allowed for read operations.
-     */
     allowedReadDirs: string[];
-    /**
-     * Directories allowed for write operations.
-     */
     allowedWriteDirs: string[];
-    /**
-     * Network domains allowed for access.
-     */
     allowNetDomains: string[];
-    /**
-     * Allowed external packages.
-     */
     allowedPackages: string[];
-    /**
-     * Allowed executables.
-     */
     allowedExecutables: string[];
-    /**
-     * Allowed environment variables.
-     */
     allowedEnvironments: string[];
   };
-  /**
-   * Additional command-line arguments for Deno.
-   */
   extraArguments: string[];
-  /**
-   * Timeout for the execution in milliseconds.
-   */
   timeout: number;
-  /**
-   * Optional path to a Deno configuration file (deno.json).
-   */
   configFilePath?: string;
-  /**
-   * Optional path to an environment variable file.
-   */
   envFilePath?: string;
-  /**
-   * Optional function to invoke in the script.
-   */
   invoke?: {
-    /**
-     * Name of the function to call.
-     */
     function: string;
-    /**
-     * Arguments to pass to the function.
-     */
     arguments: unknown[];
   };
 }
 
-/**
- * Executes a TypeScript file in a controlled Deno environment.
- * 
- * @param scriptPath - The path to the TypeScript script.
- * @param options - Execution options.
- * @returns An object containing the output message and the temporary file path used.
- */
 export async function executeTypeScriptFile(
   scriptPath: string,
   options: ITSExecuteOptions,
@@ -96,18 +39,12 @@ export async function executeTypeScriptFile(
   const args: string[] = ["run"];
   let code = await readFile(scriptPath);
 
-  // code = removeStaticImports(code);
-
   if (invoke) {
     const stringifiedArguments = JSON.stringify(invoke.arguments);
     const fnName = invoke.function;
+
     code += `
 ;const _mcpb_result = await ${fnName}(...${stringifiedArguments}); 
-
-// if (typeof _mcpb_result !== "object") {
-//   throw new Error("Invalid function result, object expected.");
-// }
-
 if(_mcpb_result !== undefined) {
   console.log(JSON.stringify(_mcpb_result));
 }`;
@@ -120,29 +57,31 @@ if(_mcpb_result !== undefined) {
   allowedReadDirs.add("./");
   allowedReadDirs.add(tempDir);
 
-  const _allowedReadDirs = Array.from(allowedReadDirs).join(",");
-  args.push(`--allow-read=${_allowedReadDirs}`);
+  const allowedReadDirsJoined = Array.from(allowedReadDirs).join(",");
+
+  args.push(`--allow-read=${allowedReadDirsJoined}`);
 
   const allowedWriteDirs = new Set(permissions.allowedWriteDirs);
 
   allowedWriteDirs.add("./");
   allowedWriteDirs.add(tempDir);
 
-  const _allowedWriteDirs = Array.from(allowedWriteDirs).join(",");
-  args.push(`--allow-write=${_allowedWriteDirs}`);
+  const allowedWriteDirsJoined = Array.from(allowedWriteDirs).join(",");
+
+  args.push(`--allow-write=${allowedWriteDirsJoined}`);
 
   const allowedNetDomains = new Set(permissions.allowNetDomains);
 
   if (allowedNetDomains.size) {
-    const _allowedNetDomains = Array.from(allowedNetDomains).join(",");
-    args.push(`--allow-net=${_allowedNetDomains}`);
+    const allowedNetDomainsJoined = Array.from(allowedNetDomains).join(",");
+
+    args.push(`--allow-net=${allowedNetDomainsJoined}`);
   }
 
-  const allowedExecutables = new Set(permissions.allowedExecutables);
-
   if (permissions.allowedExecutables.length) {
-    const _allowedExecutables = Array.from(allowedExecutables).join(",");
-    args.push(`--allow-run=${_allowedExecutables}`);
+    const allowedExecutablesJoined = Array.from(permissions.allowedExecutables).join(",");
+
+    args.push(`--allow-run=${allowedExecutablesJoined}`);
   }
 
   const allowedEnvironments = new Set(permissions.allowedEnvironments);
@@ -151,8 +90,9 @@ if(_mcpb_result !== undefined) {
   allowedEnvironments.add("TMP");
   allowedEnvironments.add("TEMP");
 
-  const _allowedEnvironments = Array.from(allowedEnvironments).join(",");
-  args.push(`--allow-env=${_allowedEnvironments}`);
+  const allowedEnvironmentsJoined = Array.from(allowedEnvironments).join(",");
+
+  args.push(`--allow-env=${allowedEnvironmentsJoined}`);
 
   args.push(...extraArguments);
 
@@ -167,22 +107,18 @@ if(_mcpb_result !== undefined) {
 
   args.push(codeFilePath);
 
-  const command = new Deno.Command("deno", {
-    args,
+  const command = createDenoCommand(args, {
     cwd: options.projectCwd,
-    // signal: AbortSignal.timeout(timeout),
-    stdin: "null",
-    stderr: "piped",
-    stdout: "piped",
   });
 
   const decoder = new TextDecoder();
   const child = command.spawn();
+
   const timeoutId = setTimeout(() => {
     try {
       child.kill("SIGKILL");
     } catch {
-      // nop
+      // empty
     }
   }, timeout);
 
@@ -191,8 +127,9 @@ if(_mcpb_result !== undefined) {
   clearTimeout(timeoutId);
 
   if (!success) {
-    Deno.removeSync(codeFilePath);
+    removeSync(codeFilePath);
     const errorMessage = decoder.decode(stderr);
+
     throw new Error(errorMessage);
   }
 

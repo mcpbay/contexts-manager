@@ -1,13 +1,15 @@
-import { assertEquals, assertExists } from "@std/assert";
+import { expect, test } from "@libs/testing";
 import { join } from "@std/path";
 import type { ITSExecuteOptions } from "../src/utils/ts-execute.util.ts";
 import { prepareContext } from "../src/mod.ts";
+import { envDelete, envSet, makeTempDirSync, mkdirSync, removeSync, writeTextFileSync } from "../src/utils/fs.util.ts";
 
 const projectRoot = "E:\\Git\\profit\\node\\mcpbay\\mcpbay-mcpb-core";
 
-Deno.test("prepareContext - Exhaustive Config: Optional typeScript fields", async () => {
-  Deno.env.set("TEST_VAR", "value");
-  const tempDir = Deno.makeTempDirSync();
+test("prepareContext - Exhaustive Config: Optional typeScript fields", async () => {
+  envSet("TEST_VAR", "value");
+  const tempDir = makeTempDirSync();
+
   try {
     const contextConfig = {
       name: "full-context",
@@ -25,11 +27,12 @@ Deno.test("prepareContext - Exhaustive Config: Optional typeScript fields", asyn
         extraArguments: ["--allow-all"],
       },
     };
-    Deno.writeTextFileSync(
+
+    writeTextFileSync(
       join(tempDir, "context.json"),
       JSON.stringify(contextConfig),
     );
-    Deno.writeTextFileSync(join(tempDir, "deno.json"), JSON.stringify({}));
+    writeTextFileSync(join(tempDir, "deno.json"), JSON.stringify({}));
 
     const options: ITSExecuteOptions = {
       importsCwd: projectRoot,
@@ -47,26 +50,27 @@ Deno.test("prepareContext - Exhaustive Config: Optional typeScript fields", asyn
     };
 
     const response = await prepareContext(tempDir, options);
-    assertExists(response);
-    assertEquals(response.resources.length, 0);
-    assertEquals(response.tools.length, 0);
+
+    expect(response).toBeTruthy();
+    expect(response.resources.length).toBe(0);
+    expect(response.tools.length).toBe(0);
   } finally {
-    Deno.env.delete("TEST_VAR");
-    Deno.removeSync(tempDir, { recursive: true });
+    envDelete("TEST_VAR");
+    removeSync(tempDir);
   }
 });
 
-Deno.test("prepareContext - Exhaustive Config: Invalid fields with defaults (.catch)", async () => {
-  const tempDir = Deno.makeTempDirSync();
+test("prepareContext - Exhaustive Config: Invalid fields with defaults (.catch)", async () => {
+  const tempDir = makeTempDirSync();
+
   try {
     const contextConfig = {
-      // name is missing, but has .catch("Context name")
-      // version is missing, but has .catch("Context version")
-      description: 123, // wrong type, but description has .catch()
-      author: true, // wrong type, but author has .catch()
+      description: 123,
+      author: true,
       tags: ["valid"],
     };
-    Deno.writeTextFileSync(
+
+    writeTextFileSync(
       join(tempDir, "context.json"),
       JSON.stringify(contextConfig),
     );
@@ -87,18 +91,19 @@ Deno.test("prepareContext - Exhaustive Config: Invalid fields with defaults (.ca
     };
 
     const response = await prepareContext(tempDir, options);
-    // Since everything except tags has .catch(), it should succeed with defaults
-    assertExists(response);
+
+    expect(response).toBeTruthy();
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tempDir);
   }
 });
 
-Deno.test("prepareContext - Exhaustive Resource: Markdown with complex metadata", async () => {
-  const tempDir = Deno.makeTempDirSync();
+test("prepareContext - Exhaustive Resource: Markdown with complex metadata", async () => {
+  const tempDir = makeTempDirSync();
   const resourcesDir = join(tempDir, "resources");
+
   try {
-    Deno.mkdirSync(resourcesDir);
+    mkdirSync(resourcesDir);
     const contextConfig = {
       name: "res-test",
       version: "1",
@@ -106,7 +111,8 @@ Deno.test("prepareContext - Exhaustive Resource: Markdown with complex metadata"
       author: "a",
       tags: [],
     };
-    Deno.writeTextFileSync(
+
+    writeTextFileSync(
       join(tempDir, "context.json"),
       JSON.stringify(contextConfig),
     );
@@ -119,7 +125,8 @@ mimeType: application/json
 extraField: this should be ignored by the schema but not crash the parser
 ---
 # Content`;
-    Deno.writeTextFileSync(join(resourcesDir, "complex.md"), mdContent);
+
+    writeTextFileSync(join(resourcesDir, "complex.md"), mdContent);
 
     const options: ITSExecuteOptions = {
       importsCwd: projectRoot,
@@ -138,19 +145,21 @@ extraField: this should be ignored by the schema but not crash the parser
 
     const response = await prepareContext(tempDir, options);
     const res = response.resources.find((r) => r.name === "complex-resource");
-    assertExists(res);
-    assertEquals(res.mimeType, "application/json");
-    assertEquals(res.title, "Complex Title");
+
+    expect(res).toBeTruthy();
+    expect(res!.mimeType).toBe("application/json");
+    expect(res!.title).toBe("Complex Title");
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tempDir);
   }
 });
 
-Deno.test("prepareContext - Exhaustive Tool: inputSchema and outputSchema validation", async () => {
-  const tempDir = Deno.makeTempDirSync();
+test("prepareContext - Exhaustive Tool: inputSchema and outputSchema validation", async () => {
+  const tempDir = makeTempDirSync();
   const toolsDir = join(tempDir, "tools");
+
   try {
-    Deno.mkdirSync(toolsDir);
+    mkdirSync(toolsDir);
     const contextConfig = {
       name: "tool-test",
       version: "1",
@@ -158,11 +167,12 @@ Deno.test("prepareContext - Exhaustive Tool: inputSchema and outputSchema valida
       author: "a",
       tags: [],
     };
-    Deno.writeTextFileSync(
+
+    writeTextFileSync(
       join(tempDir, "context.json"),
       JSON.stringify(contextConfig),
     );
-    Deno.writeTextFileSync(join(tempDir, "deno.json"), JSON.stringify({}));
+    writeTextFileSync(join(tempDir, "deno.json"), JSON.stringify({}));
 
     const tsToolContent = `
       export function toolMeta() {
@@ -186,7 +196,8 @@ Deno.test("prepareContext - Exhaustive Tool: inputSchema and outputSchema valida
         };
       }
     `;
-    Deno.writeTextFileSync(join(toolsDir, "complex.ts"), tsToolContent);
+
+    writeTextFileSync(join(toolsDir, "complex.ts"), tsToolContent);
 
     const options: ITSExecuteOptions = {
       importsCwd: projectRoot,
@@ -205,20 +216,22 @@ Deno.test("prepareContext - Exhaustive Tool: inputSchema and outputSchema valida
 
     const response = await prepareContext(tempDir, options);
     const tool = response.tools.find((t) => t.name === "complex_tool");
-    assertExists(tool);
-    assertExists(tool.inputSchema);
-    assertExists(tool.outputSchema);
-    assertEquals((tool.inputSchema as any).required, ["foo"]);
+
+    expect(tool).toBeTruthy();
+    expect(tool!.inputSchema).toBeTruthy();
+    expect(tool!.outputSchema).toBeTruthy();
+    expect((tool!.inputSchema as any).required).toEqual(["foo"]);
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tempDir);
   }
 });
 
-Deno.test("prepareContext - Exhaustive Tool: Name transformation to snake_case", async () => {
-  const tempDir = Deno.makeTempDirSync();
+test("prepareContext - Exhaustive Tool: Name transformation to snake_case", async () => {
+  const tempDir = makeTempDirSync();
   const toolsDir = join(tempDir, "tools");
+
   try {
-    Deno.mkdirSync(toolsDir);
+    mkdirSync(toolsDir);
     const contextConfig = {
       name: "tool-test",
       version: "1",
@@ -226,11 +239,12 @@ Deno.test("prepareContext - Exhaustive Tool: Name transformation to snake_case",
       author: "a",
       tags: [],
     };
-    Deno.writeTextFileSync(
+
+    writeTextFileSync(
       join(tempDir, "context.json"),
       JSON.stringify(contextConfig),
     );
-    Deno.writeTextFileSync(join(tempDir, "deno.json"), JSON.stringify({}));
+    writeTextFileSync(join(tempDir, "deno.json"), JSON.stringify({}));
 
     const tsToolContent = `
       export function toolMeta() {
@@ -241,7 +255,8 @@ Deno.test("prepareContext - Exhaustive Tool: Name transformation to snake_case",
         };
       }
     `;
-    Deno.writeTextFileSync(join(toolsDir, "transform.ts"), tsToolContent);
+
+    writeTextFileSync(join(toolsDir, "transform.ts"), tsToolContent);
 
     const options: ITSExecuteOptions = {
       importsCwd: projectRoot,
@@ -260,8 +275,9 @@ Deno.test("prepareContext - Exhaustive Tool: Name transformation to snake_case",
 
     const response = await prepareContext(tempDir, options);
     const tool = response.tools.find((t) => t.name === "my_awesome_tool");
-    assertExists(tool);
+
+    expect(tool).toBeTruthy();
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tempDir);
   }
 });

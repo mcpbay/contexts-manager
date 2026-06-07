@@ -10,6 +10,7 @@
     "dev": "deno run --watch main.ts"
   },
   "imports": {
+    "@libs/testing": "jsr:@libs/testing@^5.2.3",
     "@mcpbay/easy-mcp-server": "jsr:@mcpbay/easy-mcp-server@^1.2.2",
     "@online/is": "jsr:@online/is@^0.0.6",
     "@std/assert": "jsr:@std/assert@1",

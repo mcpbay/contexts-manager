@@ -1,18 +1,20 @@
-import { assertEquals, assertRejects } from "@std/assert";
+import { expect, test } from "@libs/testing";
 import { join } from "@std/path";
 import { MCPContext } from "../main.ts";
 import type { ITSExecuteOptions } from "../src/utils/ts-execute.util.ts";
+import { makeTempDirSync, mkdirSync, removeSync, writeTextFileSync } from "../src/utils/fs.util.ts";
 
 const projectRoot = "E:\\Git\\profit\\node\\mcpbay\\mcpbay-mcpb-core";
 
-Deno.test("MCPContext - Exhaustive Execution: Tool with complex input validation", async () => {
-  const tempDir = Deno.makeTempDirSync();
+test("MCPContext - Exhaustive Execution: Tool with complex input validation", async () => {
+  const tempDir = makeTempDirSync();
   const contextDir = join(tempDir, "context");
-  Deno.mkdirSync(contextDir);
-  Deno.mkdirSync(join(contextDir, "tools"));
+
+  mkdirSync(contextDir);
+  mkdirSync(join(contextDir, "tools"));
 
   try {
-    Deno.writeTextFileSync(
+    writeTextFileSync(
       join(contextDir, "context.json"),
       JSON.stringify({
         name: "test",
@@ -22,9 +24,8 @@ Deno.test("MCPContext - Exhaustive Execution: Tool with complex input validation
         tags: [],
       }),
     );
-    Deno.writeTextFileSync(join(contextDir, "deno.json"), JSON.stringify({}));
+    writeTextFileSync(join(contextDir, "deno.json"), JSON.stringify({}));
 
-    // Tool that expects a specific object structure
     const toolContent = `
       export function toolMeta() {
         return {
@@ -44,7 +45,8 @@ Deno.test("MCPContext - Exhaustive Execution: Tool with complex input validation
         return { success: true, args };
       }
     `;
-    Deno.writeTextFileSync(join(contextDir, "tools", "tool.ts"), toolContent);
+
+    writeTextFileSync(join(contextDir, "tools", "tool.ts"), toolContent);
 
     const mcpContext = new MCPContext();
     const options: ITSExecuteOptions = {
@@ -64,31 +66,26 @@ Deno.test("MCPContext - Exhaustive Execution: Tool with complex input validation
 
     await mcpContext.loadContext(contextDir, options);
 
-    // Valid execution
     const res1 = await mcpContext.executeTool("validate_me", {
       email: "test@example.com",
       age: 20,
     }, options);
-    assertEquals((res1 as any).success, true);
 
-    // Invalid execution (missing field) - This should throw due to z.fromJSONSchema(...).parse(args)
-    // await assertRejects(() => mcpContext.executeTool("validate_me", { email: "test@example.com" }, options));
-
-    // Invalid execution (wrong type)
-    // await assertRejects(() => mcpContext.executeTool("validate_me", { email: "test@example.com", age: "young" }, options));
+    expect((res1 as any).success).toBe(true);
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tempDir);
   }
 });
 
-Deno.test("MCPContext - Exhaustive Execution: Tool returning non-object", async () => {
-  const tempDir = Deno.makeTempDirSync();
+test("MCPContext - Exhaustive Execution: Tool returning non-object", async () => {
+  const tempDir = makeTempDirSync();
   const contextDir = join(tempDir, "context");
-  Deno.mkdirSync(contextDir);
-  Deno.mkdirSync(join(contextDir, "tools"));
+
+  mkdirSync(contextDir);
+  mkdirSync(join(contextDir, "tools"));
 
   try {
-    Deno.writeTextFileSync(
+    writeTextFileSync(
       join(contextDir, "context.json"),
       JSON.stringify({
         name: "test",
@@ -98,8 +95,8 @@ Deno.test("MCPContext - Exhaustive Execution: Tool returning non-object", async 
         tags: [],
       }),
     );
-    Deno.writeTextFileSync(join(contextDir, "deno.json"), JSON.stringify({}));
-    Deno.writeTextFileSync(
+    writeTextFileSync(join(contextDir, "deno.json"), JSON.stringify({}));
+    writeTextFileSync(
       join(contextDir, "tools", "tool.ts"),
       `
       export function toolMeta() { return { name: "return_string", description: "d", inputSchema: { type: "object", properties: {} } }; }
@@ -125,22 +122,22 @@ Deno.test("MCPContext - Exhaustive Execution: Tool returning non-object", async 
 
     await mcpContext.loadContext(contextDir, options);
     const res = await mcpContext.executeTool("return_string", {}, options);
-    // Since executeTool returns toObject<object>(outMessage), it will return the string "I am a string, not an object"
-    // because JSON.parse('"..."') works and returns a string, which is then cast to object.
-    assertEquals(res as any, "I am a string, not an object");
+
+    expect(res as any).toBe("I am a string, not an object");
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tempDir);
   }
 });
 
-Deno.test("MCPContext - Exhaustive Execution: Resource returning non-string", async () => {
-  const tempDir = Deno.makeTempDirSync();
+test("MCPContext - Exhaustive Execution: Resource returning non-string", async () => {
+  const tempDir = makeTempDirSync();
   const contextDir = join(tempDir, "context");
-  Deno.mkdirSync(contextDir);
-  Deno.mkdirSync(join(contextDir, "resources"));
+
+  mkdirSync(contextDir);
+  mkdirSync(join(contextDir, "resources"));
 
   try {
-    Deno.writeTextFileSync(
+    writeTextFileSync(
       join(contextDir, "context.json"),
       JSON.stringify({
         name: "test",
@@ -150,8 +147,8 @@ Deno.test("MCPContext - Exhaustive Execution: Resource returning non-string", as
         tags: [],
       }),
     );
-    Deno.writeTextFileSync(join(contextDir, "deno.json"), JSON.stringify({}));
-    Deno.writeTextFileSync(
+    writeTextFileSync(join(contextDir, "deno.json"), JSON.stringify({}));
+    writeTextFileSync(
       join(contextDir, "resources", "res.ts"),
       `
       export function resourceMeta() { return { name: "res", description: "d", mimeType: "text/plain" }; }
@@ -176,25 +173,21 @@ Deno.test("MCPContext - Exhaustive Execution: Resource returning non-string", as
     };
 
     await mcpContext.loadContext(contextDir, options);
-    // readResource should crash if result is not a string
-    await assertRejects(
-      () => mcpContext.readResource("res", options),
-      Error,
-      "did not return a string",
-    );
+    await expect(mcpContext.readResource("res", options)).rejects.toThrow("did not return a string");
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tempDir);
   }
 });
 
-Deno.test("MCPContext - Exhaustive Execution: Tool handler failure", async () => {
-  const tempDir = Deno.makeTempDirSync();
+test("MCPContext - Exhaustive Execution: Tool handler failure", async () => {
+  const tempDir = makeTempDirSync();
   const contextDir = join(tempDir, "context");
-  Deno.mkdirSync(contextDir);
-  Deno.mkdirSync(join(contextDir, "tools"));
+
+  mkdirSync(contextDir);
+  mkdirSync(join(contextDir, "tools"));
 
   try {
-    Deno.writeTextFileSync(
+    writeTextFileSync(
       join(contextDir, "context.json"),
       JSON.stringify({
         name: "test",
@@ -204,8 +197,8 @@ Deno.test("MCPContext - Exhaustive Execution: Tool handler failure", async () =>
         tags: [],
       }),
     );
-    Deno.writeTextFileSync(join(contextDir, "deno.json"), JSON.stringify({}));
-    Deno.writeTextFileSync(
+    writeTextFileSync(join(contextDir, "deno.json"), JSON.stringify({}));
+    writeTextFileSync(
       join(contextDir, "tools", "fail.ts"),
       `
       export function toolMeta() { return { name: "fail", description: "d", inputSchema: { type: "object", properties: {} } }; }
@@ -230,12 +223,8 @@ Deno.test("MCPContext - Exhaustive Execution: Tool handler failure", async () =>
     };
 
     await mcpContext.loadContext(contextDir, options);
-    await assertRejects(
-      () => mcpContext.executeTool("fail", {}, options),
-      Error,
-      "Intentional failure",
-    );
+    await expect(mcpContext.executeTool("fail", {}, options)).rejects.toThrow("Intentional failure");
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tempDir);
   }
 });

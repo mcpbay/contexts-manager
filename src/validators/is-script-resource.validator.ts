@@ -1,3 +1,5 @@
 export function isScriptResource(filePath: string) {
-  return filePath.endsWith(".ts");
+  const isTypeScriptFile = filePath.endsWith(".ts");
+
+  return isTypeScriptFile;
 }

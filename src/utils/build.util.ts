@@ -1,3 +1,5 @@
+import { writeFileSync, mkdirSync } from "./fs.util.ts";
+
 export type IBuildElement = IBuildFolderElement | IBuildFileElement;
 
 export interface IBuildFileElement {
@@ -15,19 +17,23 @@ export interface IBuildFolderElement {
 
 export function build(destPath: string, elements: IBuildElement[]) {
   for (const element of elements) {
-    switch (element.type) {
-      case "file":
-        Deno.writeFileSync(
-          `${destPath}/${element.name}.${element.extension}`,
-          toUint8Array(element.content),
-        );
+    const isFileElement = element.type === "file";
+
+    switch (true) {
+      case isFileElement: {
+        const filePath = `${destPath}/${element.name}.${element.extension}`;
+        const fileContent = toUint8Array(element.content);
+
+        writeFileSync(filePath, fileContent);
         break;
-      case "folder": {
+      }
+      default: {
         const folderPath = `${destPath}/${element.name}`;
+
         try {
-          Deno.mkdirSync(folderPath, { recursive: true });
+          mkdirSync(folderPath);
         } catch {
-          // Folder might already exist
+          // empty
         }
         build(folderPath, element.files);
         break;
@@ -37,11 +43,15 @@ export function build(destPath: string, elements: IBuildElement[]) {
 }
 
 function toUint8Array(text: string | object | Uint8Array) {
-  if (typeof text === "string") {
+  const isTextString = typeof text === "string";
+
+  if (isTextString) {
     return new TextEncoder().encode(text);
   }
 
-  if (text instanceof Uint8Array) {
+  const isUint8Array = text instanceof Uint8Array;
+
+  if (isUint8Array) {
     return text;
   }
 

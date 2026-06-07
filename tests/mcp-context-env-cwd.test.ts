@@ -1,18 +1,20 @@
-import { assertEquals } from "@std/assert";
+import { expect, test } from "@libs/testing";
 import { MCPContext } from "../main.ts";
-import { dirname, fromFileUrl, join } from "@std/path";
+import { join } from "@std/path";
 import type { ITSExecuteOptions } from "../src/utils/ts-execute.util.ts";
+import { cwd, envDelete, envSet, makeTempDirSync, mkdirSync, removeSync, writeTextFileSync } from "../src/utils/fs.util.ts";
 
-const __dirname = dirname(fromFileUrl(import.meta.url));
-const projectRoot = join(__dirname, "..");
+const projectRoot = cwd();
 
-Deno.test("MCPContext - Verify tools have the correct cwd", async () => {
-  const tempDir = Deno.makeTempDirSync();
-  const projectCwd = join(tempDir, "project-cwd");
-  Deno.mkdirSync(projectCwd);
+test("MCPContext - Verify tools have the correct cwd", async () => {
+  const tempDir = makeTempDirSync();
+  const projectCwdDir = join(tempDir, "project-cwd");
+
+  mkdirSync(projectCwdDir);
 
   const contextDir = join(tempDir, "context");
-  Deno.mkdirSync(contextDir);
+
+  mkdirSync(contextDir);
 
   try {
     const contextConfig = {
@@ -22,12 +24,14 @@ Deno.test("MCPContext - Verify tools have the correct cwd", async () => {
       author: "Author",
       tags: [],
     };
-    Deno.writeTextFileSync(join(contextDir, "context.json"), JSON.stringify(contextConfig));
-    Deno.writeTextFileSync(join(contextDir, "deno.json"), JSON.stringify({}));
+
+    writeTextFileSync(join(contextDir, "context.json"), JSON.stringify(contextConfig));
+    writeTextFileSync(join(contextDir, "deno.json"), JSON.stringify({}));
 
     const toolsDir = join(contextDir, "tools");
-    Deno.mkdirSync(toolsDir);
-    Deno.writeTextFileSync(
+
+    mkdirSync(toolsDir);
+    writeTextFileSync(
       join(toolsDir, "cwd-tool.ts"),
       `
       export function toolMeta() {
@@ -46,7 +50,7 @@ Deno.test("MCPContext - Verify tools have the correct cwd", async () => {
     const mcpContext = new MCPContext();
     const options: ITSExecuteOptions = {
       importsCwd: projectRoot,
-      projectCwd: projectCwd,
+      projectCwd: projectCwdDir,
       permissions: {
         allowedReadDirs: [tempDir, projectRoot],
         allowedWriteDirs: [],
@@ -61,30 +65,30 @@ Deno.test("MCPContext - Verify tools have the correct cwd", async () => {
 
     await mcpContext.loadContext(contextDir, options);
     const result = await mcpContext.executeTool("cwd_tool", {}, options);
-    
-    // On Windows, paths might have different separators or casing, but they should represent the same directory
-    // Deno.cwd() might return a path with backslashes on Windows
+
     const normalizedResultCwd = (result as any).cwd.replace(/\\/g, "/").toLowerCase();
-    const normalizedProjectCwd = projectCwd.replace(/\\/g, "/").toLowerCase();
-    
-    assertEquals(normalizedResultCwd, normalizedProjectCwd);
+    const normalizedProjectCwd = projectCwdDir.replace(/\\/g, "/").toLowerCase();
+
+    expect(normalizedResultCwd).toBe(normalizedProjectCwd);
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tempDir);
   }
 });
 
-Deno.test("MCPContext - Verify tools have access to requested environment variables", async () => {
-  const tempDir = Deno.makeTempDirSync();
-  const projectCwd = join(tempDir, "project-cwd");
-  Deno.mkdirSync(projectCwd);
+test("MCPContext - Verify tools have access to requested environment variables", async () => {
+  const tempDir = makeTempDirSync();
+  const projectCwdDir = join(tempDir, "project-cwd");
+
+  mkdirSync(projectCwdDir);
 
   const contextDir = join(tempDir, "context");
-  Deno.mkdirSync(contextDir);
 
-  // Set a test environment variable
+  mkdirSync(contextDir);
+
   const TEST_VAR_NAME = "MCPB_TEST_VAR";
   const TEST_VAR_VALUE = "hello-world";
-  Deno.env.set(TEST_VAR_NAME, TEST_VAR_VALUE);
+
+  envSet(TEST_VAR_NAME, TEST_VAR_VALUE);
 
   try {
     const contextConfig = {
@@ -94,24 +98,26 @@ Deno.test("MCPContext - Verify tools have access to requested environment variab
       author: "Author",
       tags: [],
       typeScript: {
-        allowedEnvironments: [TEST_VAR_NAME]
-      }
+        allowedEnvironments: [TEST_VAR_NAME],
+      },
     };
-    Deno.writeTextFileSync(join(contextDir, "context.json"), JSON.stringify(contextConfig));
-    Deno.writeTextFileSync(join(contextDir, "deno.json"), JSON.stringify({}));
+
+    writeTextFileSync(join(contextDir, "context.json"), JSON.stringify(contextConfig));
+    writeTextFileSync(join(contextDir, "deno.json"), JSON.stringify({}));
 
     const toolsDir = join(contextDir, "tools");
-    Deno.mkdirSync(toolsDir);
-    Deno.writeTextFileSync(
+
+    mkdirSync(toolsDir);
+    writeTextFileSync(
       join(toolsDir, "env-tool.ts"),
       "export function toolMeta() { return { name: 'env_tool', description: 'd', inputSchema: { type: 'object' } }; } " +
-      "export function toolHandler() { return { value: Deno.env.get('" + TEST_VAR_NAME + "') }; }"
+      "export function toolHandler() { return { value: Deno.env.get('" + TEST_VAR_NAME + "') }; }",
     );
 
     const mcpContext = new MCPContext();
     const options: ITSExecuteOptions = {
       importsCwd: projectRoot,
-      projectCwd: projectCwd,
+      projectCwd: projectCwdDir,
       permissions: {
         allowedReadDirs: [tempDir, projectRoot],
         allowedWriteDirs: [],
@@ -126,25 +132,27 @@ Deno.test("MCPContext - Verify tools have access to requested environment variab
 
     await mcpContext.loadContext(contextDir, options);
     const result = await mcpContext.executeTool("env_tool", {}, options);
-    
-    assertEquals((result as any).value, TEST_VAR_VALUE);
+
+    expect((result as any).value).toBe(TEST_VAR_VALUE);
   } finally {
-    Deno.env.delete(TEST_VAR_NAME);
-    Deno.removeSync(tempDir, { recursive: true });
+    envDelete(TEST_VAR_NAME);
+    removeSync(tempDir);
   }
 });
 
-Deno.test("MCPContext - Throw exception if required environment variables are missing", async () => {
-  const tempDir = Deno.makeTempDirSync();
-  const projectCwd = join(tempDir, "project-cwd");
-  Deno.mkdirSync(projectCwd);
+test("MCPContext - Throw exception if required environment variables are missing", async () => {
+  const tempDir = makeTempDirSync();
+  const projectCwdDir = join(tempDir, "project-cwd");
+
+  mkdirSync(projectCwdDir);
 
   const contextDir = join(tempDir, "context");
-  Deno.mkdirSync(contextDir);
+
+  mkdirSync(contextDir);
 
   const REQUIRED_VAR = "MISSING_REQUIRED_VAR";
-  // Ensure it's not set
-  Deno.env.delete(REQUIRED_VAR);
+
+  envDelete(REQUIRED_VAR);
 
   try {
     const contextConfig = {
@@ -154,16 +162,17 @@ Deno.test("MCPContext - Throw exception if required environment variables are mi
       author: "Author",
       tags: [],
       typeScript: {
-        allowedEnvironments: [REQUIRED_VAR]
-      }
+        allowedEnvironments: [REQUIRED_VAR],
+      },
     };
-    Deno.writeTextFileSync(join(contextDir, "context.json"), JSON.stringify(contextConfig));
-    Deno.writeTextFileSync(join(contextDir, "deno.json"), JSON.stringify({}));
+
+    writeTextFileSync(join(contextDir, "context.json"), JSON.stringify(contextConfig));
+    writeTextFileSync(join(contextDir, "deno.json"), JSON.stringify({}));
 
     const mcpContext = new MCPContext();
     const options: ITSExecuteOptions = {
       importsCwd: projectRoot,
-      projectCwd: projectCwd,
+      projectCwd: projectCwdDir,
       permissions: {
         allowedReadDirs: [tempDir, projectRoot],
         allowedWriteDirs: [],
@@ -176,13 +185,10 @@ Deno.test("MCPContext - Throw exception if required environment variables are mi
       timeout: 30000,
     };
 
-    const { assertRejects } = await import("@std/assert");
-    await assertRejects(
-      () => mcpContext.loadContext(contextDir, options),
-      Error,
+    await expect(mcpContext.loadContext(contextDir, options)).rejects.toThrow(
       `Environment variable \`${REQUIRED_VAR}\` is required but not set.`,
     );
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tempDir);
   }
 });

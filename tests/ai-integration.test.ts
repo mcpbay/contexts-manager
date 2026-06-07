@@ -1,22 +1,22 @@
-import { assertEquals } from "@std/assert";
-import { dirname, fromFileUrl, join } from "@std/path";
+import { expect, test } from "@libs/testing";
+import { join } from "@std/path";
 import { loadMCP } from "../clients/ai.ts";
 import type { ITSExecuteOptions } from "../src/utils/ts-execute.util.ts";
 import { generateText } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
+import { cwd, makeTempDirSync, mkdirSync, removeSync, writeTextFileSync } from "../src/utils/fs.util.ts";
 
-const __dirname = dirname(fromFileUrl(import.meta.url));
-const projectRoot = join(__dirname, "..");
+const projectRoot = cwd();
 
-Deno.test("loadMCP - Integration with AI SDK generateText", async () => {
-  const tempDir = Deno.makeTempDirSync();
+test("loadMCP - Integration with AI SDK generateText", async () => {
+  const tempDir = makeTempDirSync();
   const contextDir = join(tempDir, "ai-context");
   const projectCwd = join(tempDir, "project-cwd");
-  Deno.mkdirSync(contextDir);
-  Deno.mkdirSync(projectCwd);
+
+  mkdirSync(contextDir);
+  mkdirSync(projectCwd);
 
   try {
-    // Setup Context
     const contextConfig = {
       name: "ai-test",
       version: "1.0.0",
@@ -24,19 +24,20 @@ Deno.test("loadMCP - Integration with AI SDK generateText", async () => {
       author: "Tester",
       tags: ["ai"],
     };
-    Deno.writeTextFileSync(
+
+    writeTextFileSync(
       join(contextDir, "context.json"),
       JSON.stringify(contextConfig),
     );
-    Deno.writeTextFileSync(
+    writeTextFileSync(
       join(contextDir, "deno.json"),
       JSON.stringify({ imports: {} }),
     );
 
-    // Add a Tool
     const toolsDir = join(contextDir, "tools");
-    Deno.mkdirSync(toolsDir);
-    Deno.writeTextFileSync(
+
+    mkdirSync(toolsDir);
+    writeTextFileSync(
       join(toolsDir, "test-tool.ts"),
       `
       export function toolMeta() {
@@ -52,16 +53,16 @@ Deno.test("loadMCP - Integration with AI SDK generateText", async () => {
           }
         };
       }
-      export function toolHandler(args: { val: string }) {
-        return { result: "Echo: " + (args?.val || 'undefined') };
+      export function toolHandler(_args: { val: string }) {
+        return { result: "Echo: " + (_args?.val || 'undefined') };
       }
     `,
     );
 
-    // Add a Resource
     const resourcesDir = join(contextDir, "resources");
-    Deno.mkdirSync(resourcesDir);
-    Deno.writeTextFileSync(
+
+    mkdirSync(resourcesDir);
+    writeTextFileSync(
       join(resourcesDir, "test-res.md"),
       `---
 name: test_resource
@@ -85,27 +86,27 @@ Resource content here`,
       timeout: 30000,
     };
 
-    // Load MCP
     const { tools, readResource } = await loadMCP(contextDir, options);
 
-    // 1. Verify Tools conversion
-    assertEquals(typeof tools.test_tool, "object");
-    assertEquals(tools.test_tool.description, "A test tool");
+    expect(typeof tools.test_tool).toBe("object");
+    expect(tools.test_tool.description).toBe("A test tool");
 
-    // 2. Verify Manual Execution (Direct AI SDK Tool execution)
     const toolResult = await tools.test_tool.execute({ val: "hello" });
-    assertEquals(toolResult, { result: "Echo: hello" });
 
-    // 3. Verify readResource
+    expect(toolResult).toEqual({ result: "Echo: hello" });
+
     const resourceContent = await readResource("test_resource");
-    assertEquals(resourceContent.includes("Resource content here"), true);
+    const isResourceContentPresent = resourceContent.includes("Resource content here");
 
-    // 4. Mock generateText Integration
+    expect(isResourceContentPresent).toBe(true);
+
     let step = 0;
     const model = new MockLanguageModelV3({
       doGenerate: async () => {
         step++;
-        if (step === 1) {
+        const isFirstStep = step === 1;
+
+        if (isFirstStep) {
           return {
             content: [
               {
@@ -155,13 +156,12 @@ Resource content here`,
       maxRetries: 1,
     });
 
-    // Check that generateText completed
-    assertEquals(result.steps.length > 0, true);
+    expect(result.steps.length > 0).toBe(true);
   } finally {
     try {
-      Deno.removeSync(tempDir, { recursive: true });
+      removeSync(tempDir);
     } catch {
-      // Nop
+      // empty
     }
   }
 });

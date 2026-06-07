@@ -1,7 +1,9 @@
-export function generateTempFile(content: string) {
-  const tempFilePath = Deno.makeTempFileSync();
+import { makeTempFileSync, writeTextFileSync } from "./fs.util.ts";
 
-  Deno.writeTextFileSync(tempFilePath, content);
+export function generateTempFile(content: string) {
+  const tempFilePath = makeTempFileSync("ts");
+
+  writeTextFileSync(tempFilePath, content);
 
   return tempFilePath;
 }

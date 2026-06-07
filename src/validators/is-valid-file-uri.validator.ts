@@ -1,13 +1,11 @@
 export function isValidFileURI(path: string) {
-  if (!path.startsWith("file://")) {
+  const hasFileProtocolPrefix = path.startsWith("file://");
+
+  if (!hasFileProtocolPrefix) {
     return false;
   }
 
   const url = new URL(path);
 
-  if (url.protocol !== "file:") {
-    return false;
-  }
-
-  return true;
+  return url.protocol === "file:";
 }

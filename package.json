@@ -1,0 +1,20 @@
+{
+  "name": "mcpbay-mcpb-core",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@libs/testing": "npm:@jsr/libs__testing",
+    "@mcpbay/easy-mcp-server": "npm:@jsr/mcpbay__easy-mcp-server",
+    "@online/is": "npm:@jsr/online__is",
+    "@std/assert": "npm:@jsr/std__assert",
+    "@std/path": "npm:@jsr/std__path",
+    "@std/yaml": "npm:@jsr/std__yaml",
+    "ai": "6.0.168",
+    "zod": "4"
+  }
+}

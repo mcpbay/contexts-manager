@@ -13,6 +13,7 @@ import { getDirectoryContent } from "./utils/get-directory-content.util.ts";
 import { extractFilePathData } from "./utils/extract-file-path-data.util.ts";
 import { toObject } from "./transformers/to-object.transformer.ts";
 import { parseFrontMatter } from "./utils/parse-front-matter.util.ts";
+import { envHas } from "./utils/fs.util.ts";
 
 const contextConfigJsonSchema = z.object({
   name: z.string().trim().toLowerCase().describe("Context name").catch(
@@ -68,78 +69,46 @@ const contextToolMetaJsonSchema = z.object({
   ).optional(),
 });
 
-/**
- * Represents a tool that has been prepared with its execution path.
- */
 export interface IPreparedTool extends ITool {
-  /**
-   * The absolute path to the tool implementation.
-   */
   path: string;
-  /**
-   * Optional path to the configuration file for the tool.
-   */
   configFilePath?: string;
 }
 
-/**
- * Represents a resource that has been prepared with its file path.
- */
 export interface IPreparedResource extends IResource {
-  /**
-   * The absolute path to the resource file.
-   */
   path: string;
-  /**
-   * Optional path to the configuration file for the resource.
-   */
   configFilePath?: string;
 }
 
-/**
- * The response object returned after preparing a context.
- */
 export interface IPreparedContextResponse {
-  /**
-   * List of prepared resources.
-   */
   resources: IPreparedResource[];
-  /**
-   * List of prepared tools.
-   */
   tools: IPreparedTool[];
-  /**
-   * List of prompts.
-   */
   prompts: IPrompt[];
 }
 
-/**
- * Prepares the MCP context by reading configuration, listing tools, and listing resources.
- * 
- * @param path - The directory path of the context.
- * @param options - Execution options for the tools and resources.
- * @returns A promise resolving to the prepared context.
- */
 export async function prepareContext(
   path: string,
   options: Omit<ITSExecuteOptions, "permissions">,
 ): Promise<IPreparedContextResponse> {
   const contextConfigPath = `${path}/context.json`;
   const denoConfigPath = `${path}/deno.json`;
+  const isContextDirExists = exists(path, true);
+  const isContextConfigExists = exists(contextConfigPath);
 
-  crashIfNot(exists(path, true), `Context dir \`${path}\` does not exist.`);
+  crashIfNot(isContextDirExists, `Context dir \`${path}\` does not exist.`);
   crashIfNot(
-    exists(contextConfigPath),
+    isContextConfigExists,
     `Context config \`${contextConfigPath}\` does not exist.`,
   );
 
   const contextConfig = readJsonFromFile<IContextConfig>(contextConfigPath);
   const allowedEnvironments = contextConfig.typeScript?.allowedEnvironments ?? [];
+  const hasDenoConfig = exists(denoConfigPath);
 
   for (const env of allowedEnvironments) {
+    const isEnvPresent = envHas(env);
+
     crashIfNot(
-      Deno.env.has(env),
+      isEnvPresent,
       `Environment variable \`${env}\` is required but not set.`,
     );
   }
@@ -155,8 +124,6 @@ export async function prepareContext(
       allowNetDomains: contextConfig.typeScript?.allowNetDomains ?? [],
     },
   };
-
-  const hasDenoConfig = exists(denoConfigPath);
 
   if (hasDenoConfig) {
     _options.configFilePath = denoConfigPath;
@@ -205,7 +172,9 @@ async function listTools(
   tools: IPreparedTool[] = [],
   hasDenoConfig = false,
 ) {
-  if (!exists(basePath, true)) {
+  const isBasePathExists = exists(basePath, true);
+
+  if (!isBasePathExists) {
     return tools;
   }
 
@@ -214,8 +183,9 @@ async function listTools(
   for (const file of files.files) {
     const filePath = `${basePath}/${file}`;
     const fileInfo = extractFilePathData(filePath);
+    const isTypeScriptFile = fileInfo.extension === ".ts";
 
-    if (fileInfo.extension === ".ts") {
+    if (isTypeScriptFile) {
       crashIfNot(
         hasDenoConfig,
         `Context tool \`${filePath}\` requires a \`deno.json\` file in the context root.`,
@@ -246,7 +216,9 @@ async function listTools(
   }
 
   for (const directory of files.folders) {
-    if (directory.startsWith("@")) {
+    const isIgnoredDirectory = directory.startsWith("@");
+
+    if (isIgnoredDirectory) {
       continue;
     }
 
@@ -262,7 +234,9 @@ async function listResources(
   resources: IPreparedResource[] = [],
   hasDenoConfig = false,
 ) {
-  if (!exists(basePath, true)) {
+  const isBasePathExists = exists(basePath, true);
+
+  if (!isBasePathExists) {
     return resources;
   }
 
@@ -271,8 +245,10 @@ async function listResources(
   for (const file of files.files) {
     const filePath = `${basePath}/${file}`;
     const fileInfo = extractFilePathData(filePath);
+    const isMarkdownFile = fileInfo.extension === ".md";
+    const isTypeScriptFile = fileInfo.extension === ".ts";
 
-    if (fileInfo.extension === ".md") {
+    if (isMarkdownFile) {
       const parseDFrontMatter = await parseFrontMatter(filePath);
       const { success, data } = contextResourceMetaJsonSchema.safeParse(
         parseDFrontMatter.data,
@@ -289,7 +265,7 @@ async function listResources(
         path: filePath,
         configFilePath: options.configFilePath,
       });
-    } else if (fileInfo.extension === ".ts") {
+    } else if (isTypeScriptFile) {
       crashIfNot(
         hasDenoConfig,
         `Context resource \`${filePath}\` requires a \`deno.json\` file in the context root.`,

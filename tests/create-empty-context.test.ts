@@ -1,70 +1,81 @@
-import { assertEquals, assertExists } from "@std/assert";
+import { expect, test } from "@libs/testing";
 import { join } from "@std/path";
 import { createEmptyContext } from "../main.ts";
+import { makeTempFileSync, statSync, readTextFileSync, removeSync, makeTempDirSync } from "../src/utils/fs.util.ts";
 
-Deno.test("createEmptyContext - Success: Creates initial structure", () => {
-  const tempDir = Deno.makeTempDirSync();
+test("createEmptyContext - Success: Creates initial structure", () => {
+  const tmpDir = makeTempDirSync();
+
   try {
-    createEmptyContext(tempDir);
+    createEmptyContext(tmpDir);
 
-    // Check main files
-    const contextJsonPath = join(tempDir, "context.json");
-    const denoJsonPath = join(tempDir, "deno.json");
+    const contextJsonPath = join(tmpDir, "context.json");
+    const denoJsonPath = join(tmpDir, "deno.json");
+    const isContextJsonExists = statSync(contextJsonPath) !== undefined;
+    const isDenoJsonExists = statSync(denoJsonPath) !== undefined;
 
-    assertExists(Deno.statSync(contextJsonPath));
-    assertExists(Deno.statSync(denoJsonPath));
+    expect(isContextJsonExists).toBe(true);
+    expect(isDenoJsonExists).toBe(true);
 
-    // Check folders
-    assertExists(Deno.statSync(join(tempDir, "tools")));
-    assertExists(Deno.statSync(join(tempDir, "resources")));
-    assertExists(Deno.statSync(join(tempDir, "prompts")));
+    const isToolsDirExists = statSync(join(tmpDir, "tools")) !== undefined;
+    const isResourcesDirExists = statSync(join(tmpDir, "resources")) !== undefined;
+    const isPromptsDirExists = statSync(join(tmpDir, "prompts")) !== undefined;
 
-    // Check resource files
-    assertExists(Deno.statSync(join(tempDir, "resources", "CONCEPT.md")));
-    assertExists(Deno.statSync(join(tempDir, "resources", "CONCEPT.ts")));
+    expect(isToolsDirExists).toBe(true);
+    expect(isResourcesDirExists).toBe(true);
+    expect(isPromptsDirExists).toBe(true);
 
-    // Check tool files
-    assertExists(Deno.statSync(join(tempDir, "tools", "hello.ts")));
+    const isConceptMdExists = statSync(join(tmpDir, "resources", "CONCEPT.md")) !== undefined;
+    const isConceptTsExists = statSync(join(tmpDir, "resources", "CONCEPT.ts")) !== undefined;
 
-    // Verify content of context.json
-    const contextJson = JSON.parse(Deno.readTextFileSync(contextJsonPath));
-    assertEquals(contextJson.version, "1.0.0");
-    assertEquals(contextJson.description, "A useful context for MCPBay!");
+    expect(isConceptMdExists).toBe(true);
+    expect(isConceptTsExists).toBe(true);
 
-    // Verify content of deno.json
-    const denoJson = JSON.parse(Deno.readTextFileSync(denoJsonPath));
-    assertExists(denoJson.imports["@std/assert"]);
-    assertExists(denoJson.imports["zod"]);
+    const isHelloTsExists = statSync(join(tmpDir, "tools", "hello.ts")) !== undefined;
+
+    expect(isHelloTsExists).toBe(true);
+
+    const contextJson = JSON.parse(readTextFileSync(contextJsonPath));
+
+    expect(contextJson.version).toBe("1.0.0");
+    expect(contextJson.description).toBe("A useful context for MCPBay!");
+
+    const denoJson = JSON.parse(readTextFileSync(denoJsonPath));
+
+    expect(denoJson.imports["@std/assert"]).toBeTruthy();
+    expect(denoJson.imports["zod"]).toBeTruthy();
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tmpDir);
   }
 });
 
-Deno.test("createEmptyContext - Failure: Path is an existing file", () => {
-  const tempFile = Deno.makeTempFileSync();
+test("createEmptyContext - Failure: Path is an existing file", () => {
+  const tmpFile = makeTempFileSync("ts");
+
   try {
-    // Should throw because it tries to mkdirSync on an existing file
     try {
-      createEmptyContext(tempFile);
+      createEmptyContext(tmpFile);
+
       throw new Error("Should have thrown");
     } catch (e) {
-      // Deno error for "Already exists" or "Not a directory"
-      assertExists(e);
+      expect(e).toBeTruthy();
     }
   } finally {
-    Deno.removeSync(tempFile);
+    removeSync(tmpFile);
   }
 });
 
-Deno.test("createEmptyContext - Success: Directory already exists", () => {
-  const tempDir = Deno.makeTempDirSync();
-  try {
-    // Calling it twice should work (mkdirSync check)
-    createEmptyContext(tempDir);
-    createEmptyContext(tempDir);
+test("createEmptyContext - Success: Directory already exists", () => {
+  const tmpDir = makeTempDirSync();
 
-    assertExists(Deno.statSync(join(tempDir, "context.json")));
+  try {
+    createEmptyContext(tmpDir);
+    createEmptyContext(tmpDir);
+
+    const isContextJsonExists = statSync(join(tmpDir, "context.json")) !== undefined;
+
+    expect(isContextJsonExists).toBe(true);
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tmpDir);
   }
 });

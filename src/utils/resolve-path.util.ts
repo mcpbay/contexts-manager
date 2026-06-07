@@ -1,33 +1,40 @@
 import { fromFileUrl, isAbsolute, join } from "@std/path";
 import { isValidFileURI } from "../validators/is-valid-file-uri.validator.ts";
+import { cwd } from "./fs.util.ts";
 
 export function resolvePath(path: string | URL, basePath?: string) {
-  let result: string;
+  const isPathUrl = path instanceof URL;
 
-  if (path instanceof URL) {
-    if (path.protocol === "file:") {
-      result = fromFileUrl(path);
-    } else {
-      throw new Error(`Can't convert non-file URI to path: ${path.href}`);
-    }
-  } else {
-    if (isValidFileURI(path)) {
-      const url = new URL(path);
+  if (isPathUrl) {
+    const hasFileProtocol = path.protocol === "file:";
 
-      if (url.protocol === "file:") {
-        result = fromFileUrl(url);
-      } else {
-        throw new Error(`Can't convert non-file URI to path: ${path}`);
-      }
-    } else {
-      if (isAbsolute(path)) {
-        result = path;
-      } else {
-        const base = basePath ?? Deno.cwd();
-        result = join(base, path);
-      }
+    if (hasFileProtocol) {
+      return fromFileUrl(path);
     }
+
+    throw new Error(`Can't convert non-file URI to path: ${path.href}`);
   }
 
-  return result;
+  const isValidUri = isValidFileURI(path);
+
+  if (isValidUri) {
+    const url = new URL(path);
+    const hasFileProtocol = url.protocol === "file:";
+
+    if (hasFileProtocol) {
+      return fromFileUrl(url);
+    }
+
+    throw new Error(`Can't convert non-file URI to path: ${path}`);
+  }
+
+  const isAbsolutePath = isAbsolute(path);
+
+  if (isAbsolutePath) {
+    return path;
+  }
+
+  const base = basePath ?? cwd();
+
+  return join(base, path);
 }

@@ -1,18 +1,19 @@
-import { assertEquals, assertRejects } from "@std/assert";
+import { expect, test } from "@libs/testing";
 import { join } from "@std/path";
 import type { ITSExecuteOptions } from "../src/utils/ts-execute.util.ts";
 import { prepareContext } from "../src/mod.ts";
+import { cwd, makeTempDirSync, mkdirSync, removeSync, writeTextFileSync } from "../src/utils/fs.util.ts";
 
-const projectRoot = "E:\\Git\\profit\\node\\mcpbay\\mcpbay-mcpb-core";
+const projectRoot = cwd();
 
-Deno.test("prepareContext - Success: Load resources and tools correctly", async () => {
-  const tempDir = Deno.makeTempDirSync();
+test("prepareContext - Success: Load resources and tools correctly", async () => {
+  const tempDir = makeTempDirSync();
   const resourcesDir = join(tempDir, "resources");
   const toolsDir = join(tempDir, "tools");
 
   try {
-    Deno.mkdirSync(resourcesDir);
-    Deno.mkdirSync(toolsDir);
+    mkdirSync(resourcesDir);
+    mkdirSync(toolsDir);
 
     const contextConfig = {
       name: "test-context",
@@ -21,11 +22,12 @@ Deno.test("prepareContext - Success: Load resources and tools correctly", async 
       author: "Test Author",
       tags: ["test"],
     };
-    Deno.writeTextFileSync(
+
+    writeTextFileSync(
       join(tempDir, "context.json"),
       JSON.stringify(contextConfig),
     );
-    Deno.writeTextFileSync(
+    writeTextFileSync(
       join(tempDir, "deno.json"),
       JSON.stringify({}),
     );
@@ -35,9 +37,9 @@ description: A test markdown resource
 title: Test MD Resource
 ---
 # Content`;
-    Deno.writeTextFileSync(join(resourcesDir, "test.md"), mdResourceContent);
 
-    // TypeScript Resource
+    writeTextFileSync(join(resourcesDir, "test.md"), mdResourceContent);
+
     const tsResourceContent = `
       export function resourceMeta() {
         return {
@@ -48,9 +50,8 @@ title: Test MD Resource
         };
       }
     `;
-    Deno.writeTextFileSync(join(resourcesDir, "test.ts"), tsResourceContent);
+    writeTextFileSync(join(resourcesDir, "test.ts"), tsResourceContent);
 
-    // TypeScript Tool
     const tsToolContent = `
       export function toolMeta() {
         return {
@@ -60,7 +61,7 @@ title: Test MD Resource
         };
       }
     `;
-    Deno.writeTextFileSync(join(toolsDir, "test-tool.ts"), tsToolContent);
+    writeTextFileSync(join(toolsDir, "test-tool.ts"), tsToolContent);
 
     const options: ITSExecuteOptions = {
       importsCwd: projectRoot,
@@ -80,32 +81,35 @@ title: Test MD Resource
 
     const response = await prepareContext(tempDir, options);
 
-    assertEquals(response.resources.length, 2);
-    assertEquals(response.tools.length, 1);
+    expect(response.resources.length).toBe(2);
+    expect(response.tools.length).toBe(1);
 
     const mdResource = response.resources.find((r) =>
       r.name === "test-md-resource"
     );
-    assertEquals(mdResource?.title, "Test MD Resource");
+
+    expect(mdResource?.title).toBe("Test MD Resource");
 
     const tsResource = response.resources.find((r) =>
       r.name === "test-ts-resource"
     );
-    assertEquals(tsResource?.mimeType, "text/plain");
+
+    expect(tsResource?.mimeType).toBe("text/plain");
 
     const tool = response.tools.find((t) => t.name === "test_tool");
-    assertEquals(tool?.description, "A test tool");
+
+    expect(tool?.description).toBe("A test tool");
   } finally {
     try {
-      Deno.removeSync(tempDir, { recursive: true });
+      removeSync(tempDir);
     } catch {
-      // nop
+      // empty
     }
   }
 });
 
-Deno.test("prepareContext - Failure: Context directory does not exist", async () => {
-  const nonExistentDir = join(Deno.cwd(), "non-existent-context-dir");
+test("prepareContext - Failure: Context directory does not exist", async () => {
+  const nonExistentDir = join(cwd(), "non-existent-context-dir");
   const options: ITSExecuteOptions = {
     importsCwd: projectRoot,
     projectCwd: projectRoot,
@@ -121,15 +125,11 @@ Deno.test("prepareContext - Failure: Context directory does not exist", async ()
     timeout: 5000,
   };
 
-  await assertRejects(
-    () => prepareContext(nonExistentDir, options),
-    Error,
-    "Context dir",
-  );
+  await expect(prepareContext(nonExistentDir, options)).rejects.toThrow("Context dir");
 });
 
-Deno.test("prepareContext - Failure: context.json does not exist", async () => {
-  const tempDir = Deno.makeTempDirSync();
+test("prepareContext - Failure: context.json does not exist", async () => {
+  const tempDir = makeTempDirSync();
   const options: ITSExecuteOptions = {
     importsCwd: projectRoot,
     projectCwd: projectRoot,
@@ -146,18 +146,15 @@ Deno.test("prepareContext - Failure: context.json does not exist", async () => {
   };
 
   try {
-    await assertRejects(
-      () => prepareContext(tempDir, options),
-      Error,
-      "Context config",
-    );
+    await expect(prepareContext(tempDir, options)).rejects.toThrow("Context config");
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tempDir);
   }
 });
 
-Deno.test("prepareContext - Success: Load with no resources and tools folders", async () => {
-  const tempDir = Deno.makeTempDirSync();
+test("prepareContext - Success: Load with no resources and tools folders", async () => {
+  const tempDir = makeTempDirSync();
+
   try {
     const contextConfig = {
       name: "no-folders-context",
@@ -166,7 +163,8 @@ Deno.test("prepareContext - Success: Load with no resources and tools folders", 
       author: "Test Author",
       tags: [],
     };
-    Deno.writeTextFileSync(
+
+    writeTextFileSync(
       join(tempDir, "context.json"),
       JSON.stringify(contextConfig),
     );
@@ -188,21 +186,22 @@ Deno.test("prepareContext - Success: Load with no resources and tools folders", 
 
     const response = await prepareContext(tempDir, options);
 
-    assertEquals(response.resources.length, 0);
-    assertEquals(response.tools.length, 0);
+    expect(response.resources.length).toBe(0);
+    expect(response.tools.length).toBe(0);
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tempDir);
   }
 });
 
-Deno.test("prepareContext - Failure: context.json invalid format (missing required fields)", async () => {
-  const tempDir = Deno.makeTempDirSync();
+test("prepareContext - Failure: context.json invalid format (missing required fields)", async () => {
+  const tempDir = makeTempDirSync();
+
   try {
     const contextConfig = {
-      // name is missing
       version: "1.0.0",
     };
-    Deno.writeTextFileSync(
+
+    writeTextFileSync(
       join(tempDir, "context.json"),
       JSON.stringify(contextConfig),
     );
@@ -222,20 +221,18 @@ Deno.test("prepareContext - Failure: context.json invalid format (missing requir
       timeout: 5000,
     };
 
-    // Since schemas use .catch() for some fields, we check if it fails or returns defaults
-    // In this case, name, version, description, author have .catch(), but tags doesn't.
-    // If tags is missing, it should throw.
-    await assertRejects(() => prepareContext(tempDir, options));
+    await expect(prepareContext(tempDir, options)).rejects.toThrow();
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tempDir);
   }
 });
 
-Deno.test("prepareContext - Failure: Tool metadata invalid format", async () => {
-  const tempDir = Deno.makeTempDirSync();
+test("prepareContext - Failure: Tool metadata invalid format", async () => {
+  const tempDir = makeTempDirSync();
   const toolsDir = join(tempDir, "tools");
+
   try {
-    Deno.mkdirSync(toolsDir);
+    mkdirSync(toolsDir);
     const contextConfig = {
       name: "invalid-tool-context",
       version: "1.0.0",
@@ -243,24 +240,24 @@ Deno.test("prepareContext - Failure: Tool metadata invalid format", async () => 
       author: "author",
       tags: [],
     };
-    Deno.writeTextFileSync(
+
+    writeTextFileSync(
       join(tempDir, "context.json"),
       JSON.stringify(contextConfig),
     );
-    Deno.writeTextFileSync(
+    writeTextFileSync(
       join(tempDir, "deno.json"),
       JSON.stringify({}),
     );
     const tsToolContent = `
       export function toolMeta() {
         return {
-          // name is missing, but schema has .catch()
-          // inputSchema is missing, and it's required WITHOUT .catch()
           description: "A test tool"
         };
       }
     `;
-    Deno.writeTextFileSync(join(toolsDir, "bad-tool.ts"), tsToolContent);
+
+    writeTextFileSync(join(toolsDir, "bad-tool.ts"), tsToolContent);
 
     const options: ITSExecuteOptions = {
       importsCwd: projectRoot,
@@ -278,17 +275,18 @@ Deno.test("prepareContext - Failure: Tool metadata invalid format", async () => 
       configFilePath: join(projectRoot, "deno.json"),
     };
 
-    await assertRejects(() => prepareContext(tempDir, options));
+    await expect(prepareContext(tempDir, options)).rejects.toThrow();
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tempDir);
   }
 });
 
-Deno.test("prepareContext - Failure: Resource metadata invalid format", async () => {
-  const tempDir = Deno.makeTempDirSync();
+test("prepareContext - Failure: Resource metadata invalid format", async () => {
+  const tempDir = makeTempDirSync();
   const resourcesDir = join(tempDir, "resources");
+
   try {
-    Deno.mkdirSync(resourcesDir);
+    mkdirSync(resourcesDir);
     const contextConfig = {
       name: "invalid-resource-context",
       version: "1.0.0",
@@ -296,27 +294,25 @@ Deno.test("prepareContext - Failure: Resource metadata invalid format", async ()
       author: "author",
       tags: [],
     };
-    Deno.writeTextFileSync(
+
+    writeTextFileSync(
       join(tempDir, "context.json"),
       JSON.stringify(contextConfig),
     );
-    Deno.writeTextFileSync(
+    writeTextFileSync(
       join(tempDir, "deno.json"),
       JSON.stringify({}),
     );
-    // Actually, contextResourceMetaJsonSchema has .catch() for name and description.
-    // So it might not throw but use "Resource name" / "Resource description".
 
-    // Let's test TS resource where safety parse is used and crashIfNot
     const tsResourceContent = `
       export function resourceMeta() {
         return {
-          // missing required fields for contextResourceScriptMetaResponseJsonSchema
           something: "else"
         };
       }
     `;
-    Deno.writeTextFileSync(
+
+    writeTextFileSync(
       join(resourcesDir, "bad-resource.ts"),
       tsResourceContent,
     );
@@ -337,8 +333,8 @@ Deno.test("prepareContext - Failure: Resource metadata invalid format", async ()
       configFilePath: join(projectRoot, "deno.json"),
     };
 
-    await assertRejects(() => prepareContext(tempDir, options));
+    await expect(prepareContext(tempDir, options)).rejects.toThrow();
   } finally {
-    Deno.removeSync(tempDir, { recursive: true });
+    removeSync(tempDir);
   }
 });
