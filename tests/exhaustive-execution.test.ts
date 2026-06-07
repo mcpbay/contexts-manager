@@ -3,6 +3,7 @@ import { join } from "@std/path";
 import { MCPContext } from "../main.ts";
 import type { ITSExecuteOptions } from "../src/utils/ts-execute.util.ts";
 import { makeTempDirSync, mkdirSync, removeSync, writeTextFileSync } from "../src/utils/fs.util.ts";
+import { DENO_PERMISSIONS } from "./constants.ts";
 
 const projectRoot = "E:\\Git\\profit\\node\\mcpbay\\mcpbay-mcpb-core";
 
@@ -75,7 +76,7 @@ test("MCPContext - Exhaustive Execution: Tool with complex input validation", as
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);
 
 test("MCPContext - Exhaustive Execution: Tool returning non-object", async () => {
   const tempDir = makeTempDirSync();
@@ -127,7 +128,7 @@ test("MCPContext - Exhaustive Execution: Tool returning non-object", async () =>
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);
 
 test("MCPContext - Exhaustive Execution: Resource returning non-string", async () => {
   const tempDir = makeTempDirSync();
@@ -177,7 +178,7 @@ test("MCPContext - Exhaustive Execution: Resource returning non-string", async (
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);
 
 test("MCPContext - Exhaustive Execution: Tool handler failure", async () => {
   const tempDir = makeTempDirSync();
@@ -227,4 +228,4 @@ test("MCPContext - Exhaustive Execution: Tool handler failure", async () => {
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);

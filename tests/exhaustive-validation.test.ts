@@ -3,6 +3,7 @@ import { join } from "@std/path";
 import type { ITSExecuteOptions } from "../src/utils/ts-execute.util.ts";
 import { prepareContext } from "../src/mod.ts";
 import { envDelete, envSet, makeTempDirSync, mkdirSync, removeSync, writeTextFileSync } from "../src/utils/fs.util.ts";
+import { DENO_PERMISSIONS } from "./constants.ts";
 
 const projectRoot = "E:\\Git\\profit\\node\\mcpbay\\mcpbay-mcpb-core";
 
@@ -58,7 +59,7 @@ test("prepareContext - Exhaustive Config: Optional typeScript fields", async () 
     envDelete("TEST_VAR");
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);
 
 test("prepareContext - Exhaustive Config: Invalid fields with defaults (.catch)", async () => {
   const tempDir = makeTempDirSync();
@@ -96,7 +97,7 @@ test("prepareContext - Exhaustive Config: Invalid fields with defaults (.catch)"
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);
 
 test("prepareContext - Exhaustive Resource: Markdown with complex metadata", async () => {
   const tempDir = makeTempDirSync();
@@ -152,7 +153,7 @@ extraField: this should be ignored by the schema but not crash the parser
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);
 
 test("prepareContext - Exhaustive Tool: inputSchema and outputSchema validation", async () => {
   const tempDir = makeTempDirSync();
@@ -224,7 +225,7 @@ test("prepareContext - Exhaustive Tool: inputSchema and outputSchema validation"
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);
 
 test("prepareContext - Exhaustive Tool: Name transformation to snake_case", async () => {
   const tempDir = makeTempDirSync();
@@ -280,4 +281,4 @@ test("prepareContext - Exhaustive Tool: Name transformation to snake_case", asyn
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);

@@ -8,6 +8,7 @@
         "@libs/testing": "npm:@jsr/libs__testing",
         "@mcpbay/easy-mcp-server": "npm:@jsr/mcpbay__easy-mcp-server",
         "@online/is": "npm:@jsr/online__is",
+        "@online/runtime": "npm:@jsr/online__runtime",
         "@std/assert": "npm:@jsr/std__assert",
         "@std/path": "npm:@jsr/std__path",
         "@std/yaml": "npm:@jsr/std__yaml",
@@ -70,6 +71,8 @@
     "@mcpbay/easy-mcp-server": ["@jsr/mcpbay__easy-mcp-server@1.2.2", "https://npm.jsr.io/~/11/@jsr/mcpbay__easy-mcp-server/1.2.2.tgz", { "dependencies": { "@jsr/online__get-string-uid": "^1.0.1", "@jsr/online__is": "^0.0.6" } }, "sha512-Q8Vi2HYS2zPUHa4QNBZd5Gx9Fi8BXkByMjlr0XsBCiP4aMq1mVa8wx8Fc0thjb0cliDCJwT0GzVZmRGa8Ag6Zw=="],
 
     "@online/is": ["@jsr/online__is@0.0.6", "https://npm.jsr.io/~/11/@jsr/online__is/0.0.6.tgz", {}, "sha512-+uhuYWrP1AIOJMTPdIw18M7c8HJ5H1Pbt1DlZDmFeuxjNgO8euLmqcxFLu/1CeyWMGeJFEZ8c8e/6cw6X3z6vg=="],
+
+    "@online/runtime": ["@jsr/online__runtime@0.1.2", "https://npm.jsr.io/~/11/@jsr/online__runtime/0.1.2.tgz", {}, "sha512-tybqySKULKzHGNFHpHK/hvpnm8226IuVocaON+Fb+ug3qs5aCkEouCWZkJ3Y19jOFOuZq7KEIibDJmSbsjALdg=="],
 
     "@opentelemetry/api": ["@opentelemetry/api@1.9.0", "", {}, "sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg=="],
 

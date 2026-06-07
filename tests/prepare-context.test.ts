@@ -3,6 +3,7 @@ import { join } from "@std/path";
 import type { ITSExecuteOptions } from "../src/utils/ts-execute.util.ts";
 import { prepareContext } from "../src/mod.ts";
 import { cwd, makeTempDirSync, mkdirSync, removeSync, writeTextFileSync } from "../src/utils/fs.util.ts";
+import { DENO_PERMISSIONS } from "./constants.ts";
 
 const projectRoot = cwd();
 
@@ -106,7 +107,7 @@ title: Test MD Resource
       // empty
     }
   }
-});
+}, DENO_PERMISSIONS);
 
 test("prepareContext - Failure: Context directory does not exist", async () => {
   const nonExistentDir = join(cwd(), "non-existent-context-dir");
@@ -126,7 +127,7 @@ test("prepareContext - Failure: Context directory does not exist", async () => {
   };
 
   await expect(prepareContext(nonExistentDir, options)).rejects.toThrow("Context dir");
-});
+}, DENO_PERMISSIONS);
 
 test("prepareContext - Failure: context.json does not exist", async () => {
   const tempDir = makeTempDirSync();
@@ -150,7 +151,7 @@ test("prepareContext - Failure: context.json does not exist", async () => {
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);
 
 test("prepareContext - Success: Load with no resources and tools folders", async () => {
   const tempDir = makeTempDirSync();
@@ -191,7 +192,7 @@ test("prepareContext - Success: Load with no resources and tools folders", async
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);
 
 test("prepareContext - Failure: context.json invalid format (missing required fields)", async () => {
   const tempDir = makeTempDirSync();
@@ -225,7 +226,7 @@ test("prepareContext - Failure: context.json invalid format (missing required fi
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);
 
 test("prepareContext - Failure: Tool metadata invalid format", async () => {
   const tempDir = makeTempDirSync();
@@ -279,7 +280,7 @@ test("prepareContext - Failure: Tool metadata invalid format", async () => {
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);
 
 test("prepareContext - Failure: Resource metadata invalid format", async () => {
   const tempDir = makeTempDirSync();
@@ -337,4 +338,4 @@ test("prepareContext - Failure: Resource metadata invalid format", async () => {
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);

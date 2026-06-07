@@ -5,6 +5,7 @@ import {
 } from "../src/utils/ts-execute.util.ts";
 import { join } from "@std/path";
 import { makeTempFileSync, removeSync, writeTextFileSync } from "../src/utils/fs.util.ts";
+import { DENO_PERMISSIONS } from "./constants.ts";
 
 const projectRoot = "E:\\Git\\profit\\node\\mcpbay\\mcpbay-mcpb-core";
 
@@ -50,7 +51,7 @@ test("executeTypeScriptFile - response robustness (object)", async () => {
       // empty
     }
   }
-});
+}, DENO_PERMISSIONS);
 
 test("executeTypeScriptFile - response robustness (primitive types)", async () => {
   const scriptContent = `
@@ -114,7 +115,7 @@ test("executeTypeScriptFile - response robustness (primitive types)", async () =
       // empty
     }
   }
-});
+}, DENO_PERMISSIONS);
 
 test("executeTypeScriptFile - deno.json configuration (import map)", async () => {
   const configContent = JSON.stringify({
@@ -173,7 +174,7 @@ test("executeTypeScriptFile - deno.json configuration (import map)", async () =>
       // empty
     }
   }
-});
+}, DENO_PERMISSIONS);
 
 test("executeTypeScriptFile - without config and env paths", async () => {
   const scriptContent = `
@@ -215,4 +216,4 @@ test("executeTypeScriptFile - without config and env paths", async () => {
       // empty
     }
   }
-});
+}, DENO_PERMISSIONS);

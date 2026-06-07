@@ -2,6 +2,7 @@ import { expect, test } from "@libs/testing";
 import { join } from "@std/path";
 import { createEmptyContext } from "../main.ts";
 import { makeTempFileSync, statSync, readTextFileSync, removeSync, makeTempDirSync } from "../src/utils/fs.util.ts";
+import { DENO_PERMISSIONS } from "./constants.ts";
 
 test("createEmptyContext - Success: Creates initial structure", () => {
   const tmpDir = makeTempDirSync();
@@ -47,7 +48,7 @@ test("createEmptyContext - Success: Creates initial structure", () => {
   } finally {
     removeSync(tmpDir);
   }
-});
+}, DENO_PERMISSIONS);
 
 test("createEmptyContext - Failure: Path is an existing file", () => {
   const tmpFile = makeTempFileSync("ts");
@@ -63,7 +64,7 @@ test("createEmptyContext - Failure: Path is an existing file", () => {
   } finally {
     removeSync(tmpFile);
   }
-});
+}, DENO_PERMISSIONS);
 
 test("createEmptyContext - Success: Directory already exists", () => {
   const tmpDir = makeTempDirSync();
@@ -78,4 +79,4 @@ test("createEmptyContext - Success: Directory already exists", () => {
   } finally {
     removeSync(tmpDir);
   }
-});
+}, DENO_PERMISSIONS);

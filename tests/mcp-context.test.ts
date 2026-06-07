@@ -3,6 +3,7 @@ import { expect, test } from "@libs/testing";
 import { MCPContext } from "../main.ts";
 import { join } from "@std/path";
 import { cwd, makeTempDirSync, mkdirSync, removeSync, writeTextFileSync } from "../src/utils/fs.util.ts";
+import { DENO_PERMISSIONS } from "./constants.ts";
 
 const projectRoot = cwd();
 
@@ -247,7 +248,7 @@ Content 3`,
       // empty
     }
   }
-});
+}, DENO_PERMISSIONS);
 
 test("MCPContext - Crash if TypeScript tool found but deno.json is missing", async () => {
   const tempDir = makeTempDirSync();
@@ -297,7 +298,7 @@ test("MCPContext - Crash if TypeScript tool found but deno.json is missing", asy
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);
 
 test("MCPContext - Success if no TypeScript tools/resources and deno.json is missing", async () => {
   const tempDir = makeTempDirSync();
@@ -350,4 +351,4 @@ test("MCPContext - Success if no TypeScript tools/resources and deno.json is mis
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);

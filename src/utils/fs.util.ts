@@ -93,7 +93,52 @@ export function envDelete(key: string) {
   delete process.env[key];
 }
 
+const __isDeno = typeof Deno !== "undefined" && typeof Deno.Command !== "undefined";
+
 export function createDenoCommand(
+  args: string[],
+  options: { cwd?: string | URL },
+) {
+  if (__isDeno) {
+    return createDenoCommandOnDeno(args, options);
+  }
+
+  return createDenoCommandOnNode(args, options);
+}
+
+function createDenoCommandOnDeno(
+  args: string[],
+  options: { cwd?: string | URL },
+) {
+  const command = new Deno.Command("deno", {
+    args,
+    cwd: options.cwd?.toString(),
+    stderr: "piped",
+    stdout: "piped",
+    stdin: "null",
+  });
+
+  return {
+    spawn() {
+      const child = command.spawn();
+
+      return {
+        kill(signal?: string) {
+          try {
+            child.kill(signal as Deno.Signal);
+          } catch {
+            // empty
+          }
+        },
+        output() {
+          return child.output();
+        },
+      };
+    },
+  };
+}
+
+function createDenoCommandOnNode(
   args: string[],
   options: { cwd?: string | URL },
 ) {

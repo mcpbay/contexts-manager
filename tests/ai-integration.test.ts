@@ -5,6 +5,7 @@ import type { ITSExecuteOptions } from "../src/utils/ts-execute.util.ts";
 import { generateText } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { cwd, makeTempDirSync, mkdirSync, removeSync, writeTextFileSync } from "../src/utils/fs.util.ts";
+import { DENO_PERMISSIONS } from "./constants.ts";
 
 const projectRoot = cwd();
 
@@ -164,4 +165,4 @@ Resource content here`,
       // empty
     }
   }
-});
+}, DENO_PERMISSIONS);

@@ -129,7 +129,6 @@ if(_mcpb_result !== undefined) {
   if (!success) {
     removeSync(codeFilePath);
     const errorMessage = decoder.decode(stderr);
-
     throw new Error(errorMessage);
   }
 

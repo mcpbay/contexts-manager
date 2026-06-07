@@ -3,6 +3,7 @@ import { MCPContext } from "../main.ts";
 import { join } from "@std/path";
 import type { ITSExecuteOptions } from "../src/utils/ts-execute.util.ts";
 import { cwd, envDelete, envSet, makeTempDirSync, mkdirSync, removeSync, writeTextFileSync } from "../src/utils/fs.util.ts";
+import { DENO_PERMISSIONS } from "./constants.ts";
 
 const projectRoot = cwd();
 
@@ -73,7 +74,7 @@ test("MCPContext - Verify tools have the correct cwd", async () => {
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);
 
 test("MCPContext - Verify tools have access to requested environment variables", async () => {
   const tempDir = makeTempDirSync();
@@ -138,7 +139,7 @@ test("MCPContext - Verify tools have access to requested environment variables",
     envDelete(TEST_VAR_NAME);
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);
 
 test("MCPContext - Throw exception if required environment variables are missing", async () => {
   const tempDir = makeTempDirSync();
@@ -191,4 +192,4 @@ test("MCPContext - Throw exception if required environment variables are missing
   } finally {
     removeSync(tempDir);
   }
-});
+}, DENO_PERMISSIONS);
