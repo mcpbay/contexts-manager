@@ -16,13 +16,13 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@mcpbay/easy-mcp-server": "npm:@jsr/mcpbay__easy-mcp-server",
-    "@online/is": "npm:@jsr/online__is",
-    "@online/runtime": "npm:@jsr/online__runtime",
-    "@std/assert": "npm:@jsr/std__assert",
-    "@std/path": "npm:@jsr/std__path",
-    "@std/yaml": "npm:@jsr/std__yaml",
-    "ai": "npm:ai@6.0.168",
+    "@mcpbay/easy-mcp-server": "npm:@jsr/mcpbay__easy-mcp-server@^1.2.2",
+    "@online/is": "npm:@jsr/online__is@^0.0.6",
+    "@online/runtime": "npm:@jsr/online__runtime@^0.1.2",
+    "@std/assert": "npm:@jsr/std__assert@^1.0.19",
+    "@std/path": "npm:@jsr/std__path@^1.1.5",
+    "@std/yaml": "npm:@jsr/std__yaml@^1.1.1",
+    "ai": "npm:ai@^6.0.168",
     "zod": "npm:zod@^4.4.3"
   }
 }
