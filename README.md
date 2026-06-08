@@ -158,6 +158,69 @@ const result = await context.executeTool("greeting_tool", { name: "World" }, opt
 const content = await context.readResource("concept", options);
 ```
 
+### Loading a context from GitHub
+
+Contexts can be loaded directly from a GitHub repository. The library downloads the context files to a temporary directory and processes them as if they were local.
+
+**URI format**: `github://owner/repo[/tree/branch][/subpath]`
+
+```ts
+import { MCPContext, loadContextFromGitHub } from "@mcpbay/contexts-manager";
+
+// Via URI on MCPContext (automatic detection)
+const context = new MCPContext();
+
+await context.loadContext("github://mcpbay/awesome-context", options);
+
+// With a specific branch and subdirectory
+await context.loadContext("github://user/repo/tree/dev/path/to/context", options);
+
+// Execute tools and read resources normally
+const result = await context.executeTool("greeting_tool", { name: "World" }, options);
+
+// Clean up temporary files when done
+context.dispose();
+```
+
+**Using the standalone helper:**
+
+```ts
+const context = await loadContextFromGitHub({
+  source: {
+    owner: "user",
+    repo: "my-context",
+    branch: "main",      // optional, defaults to "main"
+    path: "sub/dir",     // optional subdirectory within the repo
+  },
+  options,
+});
+
+// Or pass a URI string directly
+const context = await loadContextFromGitHub({
+  source: "github://user/my-context/tree/dev",
+  options,
+});
+
+context.dispose();
+```
+
+**Authentication for private repositories:**
+
+Set the `GITHUB_TOKEN` environment variable or pass a `token` in the source:
+
+```ts
+// Via env var (recommended)
+// GITHUB_TOKEN=ghp_... in your environment
+
+// Or inline
+const context = await loadContextFromGitHub({
+  source: { owner: "org", repo: "private-context", token: "ghp_..." },
+  options,
+});
+```
+
+Temporary directories are automatically cleaned up via `FinalizationRegistry` when the `MCPContext` instance is garbage collected. For deterministic cleanup, call `context.dispose()`.
+
 ### Quick load-and-execute helpers
 
 ```ts

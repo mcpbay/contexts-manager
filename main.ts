@@ -15,13 +15,30 @@ import {
 } from "./src/mod.ts";
 import { build } from "./src/utils/build.util.ts";
 import { exists } from "./src/utils/exists.util.ts";
-import { mkdirSync } from "./src/utils/fs.util.ts";
+import { mkdirSync, removeSync } from "./src/utils/fs.util.ts";
+import {
+  downloadGitHubContext,
+  parseGitHubURI,
+  type IGitHubContextSource,
+} from "./src/utils/download-github-context.util.ts";
 
 export class MCPContext {
   public readonly tools: IPreparedTool[] = [];
   public readonly resources: IPreparedResource[] = [];
   public readonly prompts: IPrompt[] = [];
   readonly #loadedPaths = new Set<string>();
+  readonly #tempDirs = new Set<string>();
+  readonly #cleanupRegistry: FinalizationRegistry<string>;
+
+  constructor() {
+    this.#cleanupRegistry = new FinalizationRegistry((tempDir) => {
+      try {
+        removeSync(tempDir);
+      } catch {
+        // ignore cleanup errors
+      }
+    });
+  }
 
   async loadContext(path: string, options: ITSExecuteOptions) {
     const isAlreadyLoaded = this.#loadedPaths.has(path);
@@ -31,12 +48,35 @@ export class MCPContext {
       `Context \`${path}\` already loaded.`,
     );
 
-    const { prompts, resources, tools } = await prepareContext(path, options);
+    let loadPath = path;
+
+    if (path.startsWith("github://")) {
+      const source = parseGitHubURI(path);
+      const tempDir = await downloadGitHubContext(source);
+
+      this.#tempDirs.add(tempDir);
+      this.#cleanupRegistry.register(this, tempDir);
+      loadPath = tempDir;
+    }
+
+    const { prompts, resources, tools } = await prepareContext(loadPath, options);
 
     this.prompts.push(...prompts);
     this.resources.push(...resources);
     this.tools.push(...tools);
     this.#loadedPaths.add(path);
+  }
+
+  dispose() {
+    for (const dir of this.#tempDirs) {
+      try {
+        removeSync(dir);
+      } catch {
+        // ignore cleanup errors
+      }
+    }
+
+    this.#tempDirs.clear();
   }
 
   async executeTool(
@@ -280,4 +320,26 @@ export async function loadAndReadResource(
   const result = await context.readResource(resourceName, options);
 
   return result;
+}
+
+export interface ILoadContextFromGitHubArguments {
+  source: IGitHubContextSource | string;
+  options: ITSExecuteOptions;
+}
+
+export async function loadContextFromGitHub(
+  args: ILoadContextFromGitHubArguments,
+): Promise<MCPContext> {
+  const context = new MCPContext();
+  const path = typeof args.source === "string"
+    ? args.source
+    : `github://${args.source.owner}/${args.source.repo}${
+      args.source.branch && args.source.branch !== "main"
+        ? `/tree/${args.source.branch}`
+        : ""
+    }${args.source.path ? `/${args.source.path}` : ""}`;
+
+  await context.loadContext(path, args.options);
+
+  return context;
 }

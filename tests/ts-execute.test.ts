@@ -32,7 +32,6 @@ test("executeTypeScriptFile - response robustness (object)", async () => {
     },
     extraArguments: [],
     timeout: 10000,
-    configFilePath: join(projectRoot, "deno.json"),
     invoke: {
       function: "testFn",
       arguments: ["hello world"],
@@ -77,7 +76,6 @@ test("executeTypeScriptFile - response robustness (primitive types)", async () =
     },
     extraArguments: [],
     timeout: 10000,
-    configFilePath: join(projectRoot, "deno.json"),
   };
 
   try {
