@@ -23,6 +23,6 @@
     "@std/path": "npm:@jsr/std__path",
     "@std/yaml": "npm:@jsr/std__yaml",
     "ai": "6.0.168",
-    "zod": "4"
+    "zod": "^4.4.3"
   }
 }
