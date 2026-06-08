@@ -119,17 +119,17 @@ async function downloadDirectory(
 
 export async function downloadGitHubContext(
   source: IGitHubContextSource,
+  destDir: string = makeTempDirSync(),
 ): Promise<string> {
   const { owner, repo, branch = "main", path: subPath = "" } = source;
   const headers = buildApiHeaders(source.token);
-  const tempDir = makeTempDirSync();
 
   try {
-    await downloadDirectory(owner, repo, branch, subPath, tempDir, headers);
+    await downloadDirectory(owner, repo, branch, subPath, destDir, headers);
 
-    return tempDir;
+    return destDir;
   } catch (error) {
-    removeSync(tempDir);
+    removeSync(destDir);
     throw error;
   }
 }

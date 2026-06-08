@@ -69,6 +69,18 @@ const contextToolMetaJsonSchema = z.object({
   ).optional(),
 });
 
+const contextPromptMetaJsonSchema = z.object({
+  name: z.string().trim().toLowerCase().describe("Prompt name"),
+  description: z.string().trim().describe("Prompt description"),
+  title: z.string().trim().describe("Prompt title").optional(),
+});
+
+const contextPromptScriptMetaResponseJsonSchema = z.object({
+  name: z.string().trim().toLowerCase().describe("Prompt name"),
+  description: z.string().trim().describe("Prompt description"),
+  title: z.string().trim().describe("Prompt title").optional(),
+});
+
 export interface IPreparedTool extends ITool {
   path: string;
   configFilePath?: string;
@@ -160,10 +172,24 @@ export async function prepareContext(
     hasDenoConfig,
   );
 
+  const promptsPath = `${path}/prompts`;
+  const prompts = await listPrompts(
+    promptsPath,
+    {
+      ..._options,
+      invoke: {
+        function: "promptMeta",
+        arguments: [],
+      },
+    },
+    [],
+    hasDenoConfig,
+  );
+
   return {
     resources,
     tools,
-    prompts: [],
+    prompts,
   };
 }
 
@@ -307,4 +333,75 @@ async function listResources(
   }
 
   return resources;
+}
+
+async function listPrompts(
+  basePath: string,
+  options: ITSExecuteOptions,
+  prompts: IPrompt[] = [],
+  hasDenoConfig = false,
+) {
+  const isBasePathExists = exists(basePath, true);
+
+  if (!isBasePathExists) {
+    return prompts;
+  }
+
+  const files = getDirectoryContent(basePath);
+
+  for (const file of files.files) {
+    const filePath = `${basePath}/${file}`;
+    const fileInfo = extractFilePathData(filePath);
+    const isMarkdownFile = fileInfo.extension === ".md";
+    const isTypeScriptFile = fileInfo.extension === ".ts";
+
+    if (isMarkdownFile) {
+      const parsedFrontMatter = await parseFrontMatter(filePath);
+      const { success, data } = contextPromptMetaJsonSchema.safeParse(
+        parsedFrontMatter.data,
+      );
+
+      crashIfNot(success, "Invalid prompt data.");
+
+      prompts.push({
+        name: data.name,
+        description: data.description,
+        title: data.title,
+      });
+    } else if (isTypeScriptFile) {
+      crashIfNot(
+        hasDenoConfig,
+        `Context prompt \`${filePath}\` requires a \`deno.json\` file in the context root.`,
+      );
+
+      const { outMessage } = await executeTypeScriptFile(filePath, {
+        ...options,
+        invoke: {
+          function: "promptMeta",
+          arguments: [],
+        },
+      });
+
+      const response = toObject<Record<string, unknown>>(outMessage);
+      const parsedPromptMeta = contextPromptScriptMetaResponseJsonSchema
+        .parse(response);
+
+      prompts.push({
+        name: parsedPromptMeta.name,
+        description: parsedPromptMeta.description,
+        title: parsedPromptMeta.title,
+      });
+    }
+  }
+
+  for (const folder of files.folders) {
+    await listPrompts(
+      `${basePath}/${folder}`,
+      options,
+      prompts,
+      hasDenoConfig,
+    );
+  }
+
+  return prompts;
 }

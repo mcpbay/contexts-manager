@@ -22,6 +22,12 @@ import {
   parseGitHubURI,
 } from "./src/utils/download-github-context.util.ts";
 
+export interface ILoadContextOptions {
+  tsExecutionOptions: ITSExecuteOptions;
+  allowGithubContext?: boolean;
+  githubContextDestinyDirPath?: string;
+}
+
 export class MCPContext {
   public readonly tools: IPreparedTool[] = [];
   public readonly resources: IPreparedResource[] = [];
@@ -40,7 +46,8 @@ export class MCPContext {
     });
   }
 
-  async loadContext(path: string, options: ITSExecuteOptions) {
+  async loadContext(path: string, options: ILoadContextOptions) {
+    const { tsExecutionOptions, allowGithubContext, githubContextDestinyDirPath } = options;
     const isAlreadyLoaded = this.#loadedPaths.has(path);
 
     crashIfNot(
@@ -51,8 +58,10 @@ export class MCPContext {
     let loadPath = path;
 
     if (path.startsWith("github://")) {
+      crashIfNot(allowGithubContext, "Github context is not allowed.");
+
       const source = parseGitHubURI(path);
-      const tempDir = await downloadGitHubContext(source);
+      const tempDir = await downloadGitHubContext(source, githubContextDestinyDirPath);
 
       this.#tempDirs.add(tempDir);
       this.#cleanupRegistry.register(this, tempDir);
@@ -61,7 +70,7 @@ export class MCPContext {
 
     const { prompts, resources, tools } = await prepareContext(
       loadPath,
-      options,
+      tsExecutionOptions,
     );
 
     this.prompts.push(...prompts);
@@ -132,7 +141,6 @@ export class MCPContext {
       });
 
       const resourceResponse = toObject(outMessage);
-
       const isResourceResponseNull = !resourceResponse;
       const isResourceResponseNotString = typeof resourceResponse !== "string";
 
@@ -211,6 +219,20 @@ export function resourceHandler() {
 }
   `.trim();
 
+  const DEFAULT_PROMPT_EXAMPLE_CONTENT = `
+---
+name: analyze_code
+description: Analyzes a given code snippet
+---
+# Code Analysis Request
+
+Please analyze the following {{language}} code and provide insights about its structure, potential issues, and suggestions for improvement.
+
+\`\`\`{{language}}
+{{code}}
+\`\`\`
+  `.trim();
+
   const DEFAULT_TOOL_SCRIPT_EXAMPLE_CONTENT = `
 import { z } from "zod";
 
@@ -281,7 +303,14 @@ export function toolHandler(args: Record<string, string>) {
     {
       type: "folder",
       name: "prompts",
-      files: [],
+      files: [
+        {
+          type: "file",
+          name: "analyze-code",
+          extension: "md",
+          content: DEFAULT_PROMPT_EXAMPLE_CONTENT,
+        },
+      ],
     },
   ]);
 }
@@ -299,7 +328,7 @@ export async function loadAndExecuteTool(
   const { contextPath, toolName, args: toolArgs, options } = args;
   const context = new MCPContext();
 
-  await context.loadContext(contextPath, options);
+  await context.loadContext(contextPath, { tsExecutionOptions: options });
 
   const result = await context.executeTool(toolName, toolArgs, options);
 
@@ -318,7 +347,7 @@ export async function loadAndReadResource(
   const { contextPath, resourceName, options } = args;
   const context = new MCPContext();
 
-  await context.loadContext(contextPath, options);
+  await context.loadContext(contextPath, { tsExecutionOptions: options });
 
   const result = await context.readResource(resourceName, options);
 
@@ -328,6 +357,7 @@ export async function loadAndReadResource(
 export interface ILoadContextFromGitHubArguments {
   source: IGitHubContextSource | string;
   options: ITSExecuteOptions;
+  destinyDir?: string;
 }
 
 export async function loadContextFromGitHub(
@@ -336,13 +366,12 @@ export async function loadContextFromGitHub(
   const context = new MCPContext();
   const path = typeof args.source === "string"
     ? args.source
-    : `github://${args.source.owner}/${args.source.repo}${
-      args.source.branch && args.source.branch !== "main"
-        ? `/tree/${args.source.branch}`
-        : ""
+    : `github://${args.source.owner}/${args.source.repo}${args.source.branch && args.source.branch !== "main"
+      ? `/tree/${args.source.branch}`
+      : ""
     }${args.source.path ? `/${args.source.path}` : ""}`;
 
-  await context.loadContext(path, args.options);
+  await context.loadContext(path, { tsExecutionOptions: args.options, allowGithubContext: true, githubContextDestinyDirPath: args.destinyDir });
 
   return context;
 }

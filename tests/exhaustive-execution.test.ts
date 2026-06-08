@@ -72,7 +72,7 @@ test(
         timeout: 30000,
       };
 
-      await mcpContext.loadContext(contextDir, options);
+      await mcpContext.loadContext(contextDir, { tsExecutionOptions: options });
 
       const res1 = await mcpContext.executeTool("validate_me", {
         email: "test@example.com",
@@ -133,7 +133,7 @@ test(
         timeout: 30000,
       };
 
-      await mcpContext.loadContext(contextDir, options);
+      await mcpContext.loadContext(contextDir, { tsExecutionOptions: options });
       const res = await mcpContext.executeTool("return_string", {}, options);
 
       // deno-lint-ignore no-explicit-any
@@ -190,7 +190,7 @@ test(
         timeout: 30000,
       };
 
-      await mcpContext.loadContext(contextDir, options);
+      await mcpContext.loadContext(contextDir, { tsExecutionOptions: options });
       await expect(mcpContext.readResource("res", options)).rejects.toThrow(
         "did not return a string",
       );
@@ -244,7 +244,7 @@ test("MCPContext - Exhaustive Execution: Tool handler failure", async () => {
       timeout: 30000,
     };
 
-    await mcpContext.loadContext(contextDir, options);
+    await mcpContext.loadContext(contextDir, { tsExecutionOptions: options });
     await expect(mcpContext.executeTool("fail", {}, options)).rejects.toThrow(
       "Intentional failure",
     );

@@ -26,7 +26,7 @@ export async function loadMCP(
   // deno-lint-ignore no-explicit-any
   const tools: Record<string, any> = {};
 
-  await context.loadContext(path, options);
+  await context.loadContext(path, { tsExecutionOptions: options });
 
   for (const t of context.tools) {
     const isToolIgnored = options.ignore?.tools?.includes(t.name);

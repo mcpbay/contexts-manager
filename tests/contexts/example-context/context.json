@@ -1,0 +1,19 @@
+{
+  "name": "example-context",
+  "version": "1.0.0",
+  "description": "Example MCPBay context for testing loadContextFromGitHub",
+  "author": "mcpbay-user",
+  "tags": ["example", "test", "demo"],
+  "typeScript": {
+    "allowedPackages": [
+      "jsr:@std/assert",
+      "npm:zod"
+    ],
+    "allowedExecutables": [],
+    "allowedDomains": [],
+    "allowedEnvs": [],
+    "allowRead": [],
+    "allowWrite": [],
+    "extraArguments": []
+  }
+}

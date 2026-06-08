@@ -2,14 +2,7 @@
   "version": "5",
   "specifiers": {
     "npm:@jsr/libs__testing@*": "5.2.3",
-    "npm:@jsr/mcpbay__easy-mcp-server@*": "1.2.2",
-    "npm:@jsr/online__is@*": "0.0.6",
-    "npm:@jsr/online__runtime@*": "0.1.2",
-    "npm:@jsr/std__assert@*": "1.0.19",
-    "npm:@jsr/std__path@*": "1.1.5",
-    "npm:@jsr/std__yaml@*": "1.1.1",
     "npm:@types/bun@latest": "1.3.14",
-    "npm:ai@6.0.168": "6.0.168_zod@4.4.3",
     "npm:zod@^4.4.3": "4.4.3"
   },
   "npm": {
@@ -229,14 +222,14 @@
     "packageJson": {
       "dependencies": [
         "npm:@jsr/libs__testing@*",
-        "npm:@jsr/mcpbay__easy-mcp-server@*",
-        "npm:@jsr/online__is@*",
-        "npm:@jsr/online__runtime@*",
-        "npm:@jsr/std__assert@*",
-        "npm:@jsr/std__path@*",
-        "npm:@jsr/std__yaml@*",
+        "npm:@jsr/mcpbay__easy-mcp-server@^1.2.2",
+        "npm:@jsr/online__is@^0.0.6",
+        "npm:@jsr/online__runtime@~0.1.2",
+        "npm:@jsr/std__assert@^1.0.19",
+        "npm:@jsr/std__path@^1.1.5",
+        "npm:@jsr/std__yaml@^1.1.1",
         "npm:@types/bun@latest",
-        "npm:ai@6.0.168",
+        "npm:ai@^6.0.168",
         "npm:zod@^4.4.3"
       ]
     }
