@@ -22,7 +22,7 @@
     "@std/assert": "npm:@jsr/std__assert",
     "@std/path": "npm:@jsr/std__path",
     "@std/yaml": "npm:@jsr/std__yaml",
-    "ai": "6.0.168",
-    "zod": "^4.4.3"
+    "ai": "npm:ai@6.0.168",
+    "zod": "npm:zod@^4.4.3"
   }
 }
