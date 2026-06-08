@@ -1,5 +1,4 @@
 context_modules
-deno.lock
 t.ts
 project-metadata.json
 opencode.jsonc
