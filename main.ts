@@ -26,6 +26,7 @@ export interface ILoadContextOptions {
   tsExecutionOptions: ITSExecuteOptions;
   allowGithubContext?: boolean;
   githubContextDestinyDirPath?: string;
+  githubToken?: string;
 }
 
 export class MCPContext {
@@ -47,7 +48,7 @@ export class MCPContext {
   }
 
   async loadContext(path: string, options: ILoadContextOptions) {
-    const { tsExecutionOptions, allowGithubContext, githubContextDestinyDirPath } = options;
+    const { tsExecutionOptions, allowGithubContext, githubContextDestinyDirPath, githubToken } = options;
     const isAlreadyLoaded = this.#loadedPaths.has(path);
 
     crashIfNot(
@@ -61,6 +62,11 @@ export class MCPContext {
       crashIfNot(allowGithubContext, "Github context is not allowed.");
 
       const source = parseGitHubURI(path);
+
+      if (githubToken) {
+        source.token = githubToken;
+      }
+
       const tempDir = await downloadGitHubContext(source, githubContextDestinyDirPath);
 
       this.#tempDirs.add(tempDir);
@@ -358,12 +364,15 @@ export interface ILoadContextFromGitHubArguments {
   source: IGitHubContextSource | string;
   options: ITSExecuteOptions;
   destinyDir?: string;
+  token?: string;
 }
 
 export async function loadContextFromGitHub(
   args: ILoadContextFromGitHubArguments,
 ): Promise<MCPContext> {
   const context = new MCPContext();
+  const token = args.token ??
+    (typeof args.source !== "string" ? args.source.token : undefined);
   const path = typeof args.source === "string"
     ? args.source
     : `github://${args.source.owner}/${args.source.repo}${args.source.branch && args.source.branch !== "main"
@@ -371,7 +380,12 @@ export async function loadContextFromGitHub(
       : ""
     }${args.source.path ? `/${args.source.path}` : ""}`;
 
-  await context.loadContext(path, { tsExecutionOptions: args.options, allowGithubContext: true, githubContextDestinyDirPath: args.destinyDir });
+  await context.loadContext(path, {
+    tsExecutionOptions: args.options,
+    allowGithubContext: true,
+    githubContextDestinyDirPath: args.destinyDir,
+    githubToken: token,
+  });
 
   return context;
 }

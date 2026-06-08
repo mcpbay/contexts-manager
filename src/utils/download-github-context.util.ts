@@ -75,6 +75,7 @@ async function downloadDirectory(
   dirPath: string,
   localBasePath: string,
   headers: Record<string, string>,
+  localRelPath = "",
 ): Promise<void> {
   const items = await fetchGitHubContents(
     owner,
@@ -83,9 +84,17 @@ async function downloadDirectory(
     dirPath,
     headers,
   );
+  const prefix = dirPath ? `${dirPath}/` : "";
   const promises = items.map(async (item) => {
+    const itemRelPath = item.path.startsWith(prefix)
+      ? item.path.slice(prefix.length)
+      : item.path;
+    const fullLocalRelPath = localRelPath
+      ? join(localRelPath, itemRelPath)
+      : itemRelPath;
+
     if (item.type === "dir") {
-      const localDir = join(localBasePath, item.path);
+      const localDir = join(localBasePath, fullLocalRelPath);
 
       mkdirSync(localDir);
 
@@ -96,6 +105,7 @@ async function downloadDirectory(
         item.path,
         localBasePath,
         headers,
+        fullLocalRelPath,
       );
     } else if (item.type === "file" && item.download_url) {
       const response = await fetch(item.download_url);
@@ -107,7 +117,7 @@ async function downloadDirectory(
       }
 
       const content = await response.text();
-      const localFile = join(localBasePath, item.path);
+      const localFile = join(localBasePath, fullLocalRelPath);
 
       mkdirSync(dirname(localFile));
       writeTextFileSync(localFile, content);
@@ -136,24 +146,35 @@ export async function downloadGitHubContext(
 
 export function parseGitHubURI(uri: string): IGitHubContextSource {
   const url = new URL(uri);
-  const parts = url.pathname.replace(/^\/+/, "").split("/");
 
-  if (parts.length < 2) {
+  if (!url.hostname) {
     throw new Error(
       `Invalid GitHub URI: ${uri}. Expected format: github://owner/repo[/tree/branch][/subpath]`,
     );
   }
 
-  const owner = parts[0]!;
-  const repo = parts[1]!;
+  const owner = url.hostname;
+  const parts = url.pathname.replace(/^\/+/, "").split("/").filter(Boolean);
+
+  if (parts.length < 1) {
+    throw new Error(
+      `Invalid GitHub URI: ${uri}. Expected format: github://owner/repo[/tree/branch][/subpath]`,
+    );
+  }
+
+  const repo = parts[0]!;
   let branch = "main";
   let path = "";
 
-  const treeIndex = parts.indexOf("tree");
+  if (parts.length >= 2) {
+    const treeIndex = parts.indexOf("tree");
 
-  if (treeIndex !== -1 && parts[treeIndex + 1]) {
-    branch = parts[treeIndex + 1]!;
-    path = parts.slice(treeIndex + 2).join("/");
+    if (treeIndex !== -1 && parts[treeIndex + 1]) {
+      branch = parts[treeIndex + 1]!;
+      path = parts.slice(treeIndex + 2).join("/");
+    } else {
+      path = parts.slice(1).join("/");
+    }
   }
 
   return { owner, repo, branch, path };
