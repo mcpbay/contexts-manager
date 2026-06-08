@@ -18,8 +18,8 @@ import { exists } from "./src/utils/exists.util.ts";
 import { mkdirSync, removeSync } from "./src/utils/fs.util.ts";
 import {
   downloadGitHubContext,
-  parseGitHubURI,
   type IGitHubContextSource,
+  parseGitHubURI,
 } from "./src/utils/download-github-context.util.ts";
 
 export class MCPContext {
@@ -59,7 +59,10 @@ export class MCPContext {
       loadPath = tempDir;
     }
 
-    const { prompts, resources, tools } = await prepareContext(loadPath, options);
+    const { prompts, resources, tools } = await prepareContext(
+      loadPath,
+      options,
+    );
 
     this.prompts.push(...prompts);
     this.resources.push(...resources);

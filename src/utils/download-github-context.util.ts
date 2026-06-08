@@ -1,10 +1,10 @@
-import { join, dirname } from "@std/path";
+import { dirname, join } from "@std/path";
 import {
+  envGet,
   makeTempDirSync,
   mkdirSync,
-  writeTextFileSync,
   removeSync,
-  envGet,
+  writeTextFileSync,
 } from "./fs.util.ts";
 
 export interface IGitHubContextSource {
@@ -76,7 +76,13 @@ async function downloadDirectory(
   localBasePath: string,
   headers: Record<string, string>,
 ): Promise<void> {
-  const items = await fetchGitHubContents(owner, repo, branch, dirPath, headers);
+  const items = await fetchGitHubContents(
+    owner,
+    repo,
+    branch,
+    dirPath,
+    headers,
+  );
   const promises = items.map(async (item) => {
     if (item.type === "dir") {
       const localDir = join(localBasePath, item.path);

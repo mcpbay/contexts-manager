@@ -1,7 +1,7 @@
 import { dirname } from "@std/path";
 import { generateTempFile } from "./generate-temp-file.util.ts";
 import { readFile } from "./read-file.util.ts";
-import { removeSync, createDenoCommand } from "./fs.util.ts";
+import { createDenoCommand, removeSync } from "./fs.util.ts";
 
 export interface ITSExecuteOptions {
   importsCwd: URL | string;
@@ -79,7 +79,8 @@ if(_mcpb_result !== undefined) {
   }
 
   if (permissions.allowedExecutables.length) {
-    const allowedExecutablesJoined = Array.from(permissions.allowedExecutables).join(",");
+    const allowedExecutablesJoined = Array.from(permissions.allowedExecutables)
+      .join(",");
 
     args.push(`--allow-run=${allowedExecutablesJoined}`);
   }

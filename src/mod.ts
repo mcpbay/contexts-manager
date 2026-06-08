@@ -101,7 +101,8 @@ export async function prepareContext(
   );
 
   const contextConfig = readJsonFromFile<IContextConfig>(contextConfigPath);
-  const allowedEnvironments = contextConfig.typeScript?.allowedEnvironments ?? [];
+  const allowedEnvironments = contextConfig.typeScript?.allowedEnvironments ??
+    [];
   const hasDenoConfig = exists(denoConfigPath);
 
   for (const env of allowedEnvironments) {

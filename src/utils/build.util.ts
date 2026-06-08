@@ -1,4 +1,4 @@
-import { writeFileSync, mkdirSync } from "./fs.util.ts";
+import { mkdirSync, writeFileSync } from "./fs.util.ts";
 
 export type IBuildElement = IBuildFolderElement | IBuildFileElement;
 

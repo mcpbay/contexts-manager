@@ -1,0 +1,24 @@
+{
+  "name": "@mcpbay/contexts-manager",
+  "version": "1.0.0",
+  "exports": {
+    ".": "./main.ts",
+    "./clients/ai": "./clients/ai.ts"
+  },
+  "publish": {
+    "exclude": [
+      "*.lock",
+      "mcp-config.json",
+      "opencode.jsonc",
+      "project-metadata.json",
+      "deno.lock",
+      "AGENTS.md",
+      ".npmrc",
+      "node_modules",
+      ".vscode",
+      "context_modules",
+      ".github"
+    ]
+  },
+  "license": "MIT"
+}

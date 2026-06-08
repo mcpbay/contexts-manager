@@ -1,7 +1,13 @@
 import { expect, test } from "@libs/testing";
 import { join } from "@std/path";
 import { createEmptyContext } from "../main.ts";
-import { makeTempFileSync, statSync, readTextFileSync, removeSync, makeTempDirSync } from "../src/utils/fs.util.ts";
+import {
+  makeTempDirSync,
+  makeTempFileSync,
+  readTextFileSync,
+  removeSync,
+  statSync,
+} from "../src/utils/fs.util.ts";
 import { DENO_PERMISSIONS } from "./constants.ts";
 
 test("createEmptyContext - Success: Creates initial structure", () => {
@@ -19,20 +25,24 @@ test("createEmptyContext - Success: Creates initial structure", () => {
     expect(isDenoJsonExists).toBe(true);
 
     const isToolsDirExists = statSync(join(tmpDir, "tools")) !== undefined;
-    const isResourcesDirExists = statSync(join(tmpDir, "resources")) !== undefined;
+    const isResourcesDirExists =
+      statSync(join(tmpDir, "resources")) !== undefined;
     const isPromptsDirExists = statSync(join(tmpDir, "prompts")) !== undefined;
 
     expect(isToolsDirExists).toBe(true);
     expect(isResourcesDirExists).toBe(true);
     expect(isPromptsDirExists).toBe(true);
 
-    const isConceptMdExists = statSync(join(tmpDir, "resources", "CONCEPT.md")) !== undefined;
-    const isConceptTsExists = statSync(join(tmpDir, "resources", "CONCEPT.ts")) !== undefined;
+    const isConceptMdExists =
+      statSync(join(tmpDir, "resources", "CONCEPT.md")) !== undefined;
+    const isConceptTsExists =
+      statSync(join(tmpDir, "resources", "CONCEPT.ts")) !== undefined;
 
     expect(isConceptMdExists).toBe(true);
     expect(isConceptTsExists).toBe(true);
 
-    const isHelloTsExists = statSync(join(tmpDir, "tools", "hello.ts")) !== undefined;
+    const isHelloTsExists =
+      statSync(join(tmpDir, "tools", "hello.ts")) !== undefined;
 
     expect(isHelloTsExists).toBe(true);
 
@@ -73,7 +83,8 @@ test("createEmptyContext - Success: Directory already exists", () => {
     createEmptyContext(tmpDir);
     createEmptyContext(tmpDir);
 
-    const isContextJsonExists = statSync(join(tmpDir, "context.json")) !== undefined;
+    const isContextJsonExists =
+      statSync(join(tmpDir, "context.json")) !== undefined;
 
     expect(isContextJsonExists).toBe(true);
   } finally {

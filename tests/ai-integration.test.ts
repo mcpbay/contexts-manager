@@ -4,7 +4,13 @@ import { loadMCP } from "../clients/ai.ts";
 import type { ITSExecuteOptions } from "../src/utils/ts-execute.util.ts";
 import { generateText } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
-import { cwd, makeTempDirSync, mkdirSync, removeSync, writeTextFileSync } from "../src/utils/fs.util.ts";
+import {
+  cwd,
+  makeTempDirSync,
+  mkdirSync,
+  removeSync,
+  writeTextFileSync,
+} from "../src/utils/fs.util.ts";
 import { DENO_PERMISSIONS } from "./constants.ts";
 
 const projectRoot = cwd();
@@ -97,7 +103,9 @@ Resource content here`,
     expect(toolResult).toEqual({ result: "Echo: hello" });
 
     const resourceContent = await readResource("test_resource");
-    const isResourceContentPresent = resourceContent.includes("Resource content here");
+    const isResourceContentPresent = resourceContent.includes(
+      "Resource content here",
+    );
 
     expect(isResourceContentPresent).toBe(true);
 

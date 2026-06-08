@@ -1,6 +1,8 @@
 # @mcpbay/contexts-manager
 
-A filesystem-based context management system for MCPBay. It enables the creation, loading, and execution of modular MCP (Model Context Protocol) contexts using a directory structure on disk.
+A filesystem-based context management system for MCPBay. It enables the
+creation, loading, and execution of modular MCP (Model Context Protocol)
+contexts using a directory structure on disk.
 
 ## Installation
 
@@ -55,7 +57,8 @@ my-context/
 
 ### Tools
 
-Tools are TypeScript files placed in the `tools/` directory. Each tool file must export two functions:
+Tools are TypeScript files placed in the `tools/` directory. Each tool file must
+export two functions:
 
 ```ts
 import { z } from "zod";
@@ -79,11 +82,13 @@ export function toolHandler(args: Record<string, string>) {
 }
 ```
 
-Tools can be organized in nested subdirectories. Directories prefixed with `@` are ignored.
+Tools can be organized in nested subdirectories. Directories prefixed with `@`
+are ignored.
 
 ### Resources
 
-Resources can be either Markdown files with YAML frontmatter or TypeScript script resources.
+Resources can be either Markdown files with YAML frontmatter or TypeScript
+script resources.
 
 **Markdown resource** (`resources/CONCEPT.md`):
 
@@ -127,7 +132,8 @@ import { createEmptyContext } from "@mcpbay/contexts-manager";
 createEmptyContext("./my-context");
 ```
 
-This scaffolds a complete context directory with default configuration and example files.
+This scaffolds a complete context directory with default configuration and
+example files.
 
 ### Loading and using a context
 
@@ -152,7 +158,11 @@ await context.loadContext("./my-context", {
 });
 
 // Execute a tool
-const result = await context.executeTool("greeting_tool", { name: "World" }, options);
+const result = await context.executeTool(
+  "greeting_tool",
+  { name: "World" },
+  options,
+);
 
 // Read a resource
 const content = await context.readResource("concept", options);
@@ -160,12 +170,14 @@ const content = await context.readResource("concept", options);
 
 ### Loading a context from GitHub
 
-Contexts can be loaded directly from a GitHub repository. The library downloads the context files to a temporary directory and processes them as if they were local.
+Contexts can be loaded directly from a GitHub repository. The library downloads
+the context files to a temporary directory and processes them as if they were
+local.
 
 **URI format**: `github://owner/repo[/tree/branch][/subpath]`
 
 ```ts
-import { MCPContext, loadContextFromGitHub } from "@mcpbay/contexts-manager";
+import { loadContextFromGitHub, MCPContext } from "@mcpbay/contexts-manager";
 
 // Via URI on MCPContext (automatic detection)
 const context = new MCPContext();
@@ -173,10 +185,17 @@ const context = new MCPContext();
 await context.loadContext("github://mcpbay/awesome-context", options);
 
 // With a specific branch and subdirectory
-await context.loadContext("github://user/repo/tree/dev/path/to/context", options);
+await context.loadContext(
+  "github://user/repo/tree/dev/path/to/context",
+  options,
+);
 
 // Execute tools and read resources normally
-const result = await context.executeTool("greeting_tool", { name: "World" }, options);
+const result = await context.executeTool(
+  "greeting_tool",
+  { name: "World" },
+  options,
+);
 
 // Clean up temporary files when done
 context.dispose();
@@ -189,8 +208,8 @@ const context = await loadContextFromGitHub({
   source: {
     owner: "user",
     repo: "my-context",
-    branch: "main",      // optional, defaults to "main"
-    path: "sub/dir",     // optional subdirectory within the repo
+    branch: "main", // optional, defaults to "main"
+    path: "sub/dir", // optional subdirectory within the repo
   },
   options,
 });
@@ -219,12 +238,17 @@ const context = await loadContextFromGitHub({
 });
 ```
 
-Temporary directories are automatically cleaned up via `FinalizationRegistry` when the `MCPContext` instance is garbage collected. For deterministic cleanup, call `context.dispose()`.
+Temporary directories are automatically cleaned up via `FinalizationRegistry`
+when the `MCPContext` instance is garbage collected. For deterministic cleanup,
+call `context.dispose()`.
 
 ### Quick load-and-execute helpers
 
 ```ts
-import { loadAndExecuteTool, loadAndReadResource } from "@mcpbay/contexts-manager";
+import {
+  loadAndExecuteTool,
+  loadAndReadResource,
+} from "@mcpbay/contexts-manager";
 
 const toolResult = await loadAndExecuteTool({
   contextPath: "./my-context",

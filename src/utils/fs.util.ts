@@ -38,7 +38,9 @@ export function readDirSync(resolvedPath: string) {
 }
 
 export function makeTempFileSync(suffix: string) {
-  const uniqueId = `${Date.now()}-${++tempCounter}-${Math.random().toString(36).slice(2, 8)}`;
+  const uniqueId = `${Date.now()}-${++tempCounter}-${
+    Math.random().toString(36).slice(2, 8)
+  }`;
   const filePath = path.join(os.tmpdir(), `mcpb-${uniqueId}.${suffix}`);
 
   fs.writeFileSync(filePath, "", "utf-8");
@@ -61,7 +63,9 @@ export function readTextFileSync(filePath: string) {
 }
 
 export function makeTempDirSync() {
-  const uniqueId = `${Date.now()}-${++tempCounter}-${Math.random().toString(36).slice(2, 8)}`;
+  const uniqueId = `${Date.now()}-${++tempCounter}-${
+    Math.random().toString(36).slice(2, 8)
+  }`;
   const dirPath = path.join(os.tmpdir(), `mcpb-${uniqueId}`);
 
   fs.mkdirSync(dirPath);
@@ -93,7 +97,8 @@ export function envDelete(key: string) {
   delete process.env[key];
 }
 
-const __isDeno = typeof Deno !== "undefined" && typeof Deno.Command !== "undefined";
+const __isDeno = typeof Deno !== "undefined" &&
+  typeof Deno.Command !== "undefined";
 
 export function createDenoCommand(
   args: string[],
