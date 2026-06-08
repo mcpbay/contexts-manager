@@ -17,8 +17,17 @@
       "node_modules",
       ".vscode",
       "context_modules",
-      ".github"
+      ".github",
+      "tests"
     ]
   },
-  "license": "MIT"
+  "license": "MIT",
+  "lint": {
+    "rules": {
+      "exclude": [
+        "no-explicit-any",
+        "require-await"
+      ]
+    }
+  }
 }

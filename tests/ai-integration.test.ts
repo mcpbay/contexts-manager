@@ -111,6 +111,7 @@ Resource content here`,
 
     let step = 0;
     const model = new MockLanguageModelV3({
+      // deno-lint-ignore require-await
       doGenerate: async () => {
         step++;
         const isFirstStep = step === 1;

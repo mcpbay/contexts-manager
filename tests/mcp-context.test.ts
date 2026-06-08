@@ -222,12 +222,16 @@ Content 3`,
 
       const resp1 = await mcpContext.executeTool("tool1", {}, options);
 
+      // deno-lint-ignore no-explicit-any
       expect((resp1 as any).val).toBe("from-context1");
+      // deno-lint-ignore no-explicit-any
       expect((resp1 as any).cwd).toBe(projectCwdDir);
 
       const resp2 = await mcpContext.executeTool("tool2", {}, options);
 
+      // deno-lint-ignore no-explicit-any
       expect((resp2 as any).val).toBe("from-context2");
+      // deno-lint-ignore no-explicit-any
       expect((resp2 as any).cwd).toBe(projectCwdDir);
 
       const resp3 = await mcpContext.executeTool(
@@ -236,6 +240,7 @@ Content 3`,
         options,
       );
 
+      // deno-lint-ignore no-explicit-any
       expect((resp3 as any).echo).toBe("hello");
 
       const res1Content = await mcpContext.readResource("res1", options);

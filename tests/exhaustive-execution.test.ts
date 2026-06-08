@@ -79,6 +79,7 @@ test(
         age: 20,
       }, options);
 
+      // deno-lint-ignore no-explicit-any
       expect((res1 as any).success).toBe(true);
     } finally {
       removeSync(tempDir);
@@ -135,6 +136,7 @@ test(
       await mcpContext.loadContext(contextDir, options);
       const res = await mcpContext.executeTool("return_string", {}, options);
 
+      // deno-lint-ignore no-explicit-any
       expect(res as any).toBe("I am a string, not an object");
     } finally {
       removeSync(tempDir);

@@ -3,7 +3,6 @@ import {
   executeTypeScriptFile,
   type ITSExecuteOptions,
 } from "../src/utils/ts-execute.util.ts";
-import { join } from "@std/path";
 import {
   makeTempFileSync,
   removeSync,

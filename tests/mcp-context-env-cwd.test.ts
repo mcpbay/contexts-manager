@@ -78,6 +78,7 @@ test("MCPContext - Verify tools have the correct cwd", async () => {
     await mcpContext.loadContext(contextDir, options);
     const result = await mcpContext.executeTool("cwd_tool", {}, options);
 
+      // deno-lint-ignore no-explicit-any
     const normalizedResultCwd = (result as any).cwd.replace(/\\/g, "/")
       .toLowerCase();
     const normalizedProjectCwd = projectCwdDir.replace(/\\/g, "/")
@@ -153,6 +154,7 @@ test(
       await mcpContext.loadContext(contextDir, options);
       const result = await mcpContext.executeTool("env_tool", {}, options);
 
+      // deno-lint-ignore no-explicit-any
       expect((result as any).value).toBe(TEST_VAR_VALUE);
     } finally {
       envDelete(TEST_VAR_NAME);

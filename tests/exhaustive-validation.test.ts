@@ -242,6 +242,7 @@ test(
       expect(tool).toBeTruthy();
       expect(tool!.inputSchema).toBeTruthy();
       expect(tool!.outputSchema).toBeTruthy();
+      // deno-lint-ignore no-explicit-any
       expect((tool!.inputSchema as any).required).toEqual(["foo"]);
     } finally {
       removeSync(tempDir);

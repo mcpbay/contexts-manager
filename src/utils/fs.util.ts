@@ -3,6 +3,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import * as cp from "node:child_process";
 import { Buffer } from "node:buffer";
+import { getRuntime, Runtime } from "@online/runtime";
 
 let tempCounter = 0;
 
@@ -97,8 +98,7 @@ export function envDelete(key: string) {
   delete process.env[key];
 }
 
-const __isDeno = typeof Deno !== "undefined" &&
-  typeof Deno.Command !== "undefined";
+const __isDeno = getRuntime() === Runtime.Deno;
 
 export function createDenoCommand(
   args: string[],

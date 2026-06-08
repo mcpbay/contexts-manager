@@ -24,13 +24,5 @@
     "@std/yaml": "npm:@jsr/std__yaml",
     "ai": "6.0.168",
     "zod": "4"
-  },
-  "lint": {
-    "rules": {
-      "exclude": [
-        "no-explicit-any",
-        "require-await"
-      ]
-    }
   }
 }

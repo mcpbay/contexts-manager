@@ -12,6 +12,7 @@ export interface IMCPContextAiOptions extends ITSExecuteOptions {
 }
 
 export interface ILoadMCPResponse {
+  // deno-lint-ignore no-explicit-any
   tools: Record<string, any>;
   readResource(name: string): Promise<string>;
   context: MCPContext;
@@ -22,6 +23,7 @@ export async function loadMCP(
   options: IMCPContextAiOptions,
 ): Promise<ILoadMCPResponse> {
   const context = new MCPContext();
+  // deno-lint-ignore no-explicit-any
   const tools: Record<string, any> = {};
 
   await context.loadContext(path, options);
