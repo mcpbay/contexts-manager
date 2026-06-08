@@ -131,8 +131,8 @@ test(
       writeTextFileSync(
         join(toolsDir, "env-tool.ts"),
         "export function toolMeta() { return { name: 'env_tool', description: 'd', inputSchema: { type: 'object' } }; } " +
-        "export function toolHandler() { return { value: Deno.env.get('" +
-        TEST_VAR_NAME + "') }; }",
+          "export function toolHandler() { return { value: Deno.env.get('" +
+          TEST_VAR_NAME + "') }; }",
       );
 
       const mcpContext = new MCPContext();
@@ -214,7 +214,9 @@ test(
         timeout: 30000,
       };
 
-      await expect(mcpContext.loadContext(contextDir, { tsExecutionOptions: options })).rejects.toThrow(
+      await expect(
+        mcpContext.loadContext(contextDir, { tsExecutionOptions: options }),
+      ).rejects.toThrow(
         `Environment variable \`${REQUIRED_VAR}\` is required but not set.`,
       );
     } finally {

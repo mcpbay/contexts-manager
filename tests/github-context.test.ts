@@ -10,12 +10,16 @@ import {
   removeSync,
 } from "../src/utils/fs.util.ts";
 import { exists } from "../src/utils/exists.util.ts";
-import { MCPContext, loadContextFromGitHub } from "../main.ts";
-import { parseGitHubURI, type IGitHubContextSource } from "../src/utils/download-github-context.util.ts";
+import { loadContextFromGitHub, MCPContext } from "../main.ts";
+import {
+  type IGitHubContextSource,
+  parseGitHubURI,
+} from "../src/utils/download-github-context.util.ts";
 import { DENO_PERMISSIONS } from "./constants.ts";
 
 const projectRoot = cwd();
-const GITHUB_URI = "github://mcpbay/contexts-manager/tree/main/tests/contexts/example-context";
+const GITHUB_URI =
+  "github://mcpbay/contexts-manager/tree/main/tests/contexts/example-context";
 
 const baseOptions: ITSExecuteOptions = {
   importsCwd: projectRoot,
@@ -23,7 +27,11 @@ const baseOptions: ITSExecuteOptions = {
   permissions: {
     allowedReadDirs: [projectRoot],
     allowedWriteDirs: [],
-    allowNetDomains: ["api.github.com", "raw.githubusercontent.com", "github.com"],
+    allowNetDomains: [
+      "api.github.com",
+      "raw.githubusercontent.com",
+      "github.com",
+    ],
     allowedPackages: ["jsr:@std/assert", "npm:zod"],
     allowedExecutables: [],
     allowedEnvironments: [],
@@ -53,7 +61,9 @@ test(
 test(
   "parseGitHubURI - Parses a URI with branch",
   () => {
-    const result = parseGitHubURI("github://mcpbay/contexts-manager/tree/develop");
+    const result = parseGitHubURI(
+      "github://mcpbay/contexts-manager/tree/develop",
+    );
 
     expect(result.owner).toBe("mcpbay");
     expect(result.repo).toBe("contexts-manager");
@@ -79,7 +89,9 @@ test(
 test(
   "parseGitHubURI - Parses a URI with subpath but no explicit branch (defaults to main)",
   () => {
-    const result = parseGitHubURI("github://mcpbay/contexts-manager/tests/contexts/example-context");
+    const result = parseGitHubURI(
+      "github://mcpbay/contexts-manager/tests/contexts/example-context",
+    );
 
     expect(result.owner).toBe("mcpbay");
     expect(result.repo).toBe("contexts-manager");
@@ -116,11 +128,17 @@ test(
 
       const greetPrompt = context.prompts.find((p) => p.name === "greet_user");
       expect(greetPrompt).toBeTruthy();
-      expect(greetPrompt!.description).toBe("Generates a welcome message for a given user");
+      expect(greetPrompt!.description).toBe(
+        "Generates a welcome message for a given user",
+      );
 
-      const reportPrompt = context.prompts.find((p) => p.name === "generate_report");
+      const reportPrompt = context.prompts.find((p) =>
+        p.name === "generate_report"
+      );
       expect(reportPrompt).toBeTruthy();
-      expect(reportPrompt!.description).toBe("Generates a report in the specified format");
+      expect(reportPrompt!.description).toBe(
+        "Generates a report in the specified format",
+      );
     } finally {
       context.dispose();
     }
@@ -281,11 +299,16 @@ test(
 
         expect(exists(join(destinyDir, "tools", "hello.ts"))).toBeTruthy();
         expect(exists(join(destinyDir, "resources", "README.md"))).toBeTruthy();
-        expect(exists(join(destinyDir, "resources", "CONCEPT.ts"))).toBeTruthy();
-        expect(exists(join(destinyDir, "prompts", "greet-user.md"))).toBeTruthy();
-        expect(exists(join(destinyDir, "prompts", "generate-report.md"))).toBeTruthy();
+        expect(exists(join(destinyDir, "resources", "CONCEPT.ts")))
+          .toBeTruthy();
+        expect(exists(join(destinyDir, "prompts", "greet-user.md")))
+          .toBeTruthy();
+        expect(exists(join(destinyDir, "prompts", "generate-report.md")))
+          .toBeTruthy();
 
-        const contextJson = JSON.parse(readTextFileSync(join(destinyDir, "context.json")));
+        const contextJson = JSON.parse(
+          readTextFileSync(join(destinyDir, "context.json")),
+        );
         expect(contextJson.name).toBe("example-context");
 
         const result = await context.executeTool(

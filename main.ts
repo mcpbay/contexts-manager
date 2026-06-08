@@ -48,7 +48,12 @@ export class MCPContext {
   }
 
   async loadContext(path: string, options: ILoadContextOptions) {
-    const { tsExecutionOptions, allowGithubContext, githubContextDestinyDirPath, githubToken } = options;
+    const {
+      tsExecutionOptions,
+      allowGithubContext,
+      githubContextDestinyDirPath,
+      githubToken,
+    } = options;
     const isAlreadyLoaded = this.#loadedPaths.has(path);
 
     crashIfNot(
@@ -67,7 +72,10 @@ export class MCPContext {
         source.token = githubToken;
       }
 
-      const tempDir = await downloadGitHubContext(source, githubContextDestinyDirPath);
+      const tempDir = await downloadGitHubContext(
+        source,
+        githubContextDestinyDirPath,
+      );
 
       this.#tempDirs.add(tempDir);
       this.#cleanupRegistry.register(this, tempDir);
@@ -375,9 +383,10 @@ export async function loadContextFromGitHub(
     (typeof args.source !== "string" ? args.source.token : undefined);
   const path = typeof args.source === "string"
     ? args.source
-    : `github://${args.source.owner}/${args.source.repo}${args.source.branch && args.source.branch !== "main"
-      ? `/tree/${args.source.branch}`
-      : ""
+    : `github://${args.source.owner}/${args.source.repo}${
+      args.source.branch && args.source.branch !== "main"
+        ? `/tree/${args.source.branch}`
+        : ""
     }${args.source.path ? `/${args.source.path}` : ""}`;
 
   await context.loadContext(path, {

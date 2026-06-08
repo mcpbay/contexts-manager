@@ -7,7 +7,12 @@ import { cwd } from "../src/utils/fs.util.ts";
 import { DENO_PERMISSIONS } from "./constants.ts";
 
 const projectRoot = cwd();
-const exampleContextDir = join(projectRoot, "tests", "contexts", "example-context");
+const exampleContextDir = join(
+  projectRoot,
+  "tests",
+  "contexts",
+  "example-context",
+);
 
 const baseOptions: ITSExecuteOptions = {
   importsCwd: projectRoot,
@@ -40,11 +45,17 @@ test(
 
     const greetPrompt = response.prompts.find((p) => p.name === "greet_user");
     expect(greetPrompt).toBeTruthy();
-    expect(greetPrompt!.description).toBe("Generates a welcome message for a given user");
+    expect(greetPrompt!.description).toBe(
+      "Generates a welcome message for a given user",
+    );
 
-    const reportPrompt = response.prompts.find((p) => p.name === "generate_report");
+    const reportPrompt = response.prompts.find((p) =>
+      p.name === "generate_report"
+    );
     expect(reportPrompt).toBeTruthy();
-    expect(reportPrompt!.description).toBe("Generates a report in the specified format");
+    expect(reportPrompt!.description).toBe(
+      "Generates a report in the specified format",
+    );
   },
   DENO_PERMISSIONS,
 );
@@ -54,7 +65,9 @@ test(
   async () => {
     const context = new MCPContext();
 
-    await context.loadContext(exampleContextDir, { tsExecutionOptions: baseOptions });
+    await context.loadContext(exampleContextDir, {
+      tsExecutionOptions: baseOptions,
+    });
 
     expect(context.tools.length).toBe(1);
     expect(context.resources.length).toBe(2);
@@ -79,7 +92,9 @@ test(
   async () => {
     const context = new MCPContext();
 
-    await context.loadContext(exampleContextDir, { tsExecutionOptions: baseOptions });
+    await context.loadContext(exampleContextDir, {
+      tsExecutionOptions: baseOptions,
+    });
 
     const content = await context.readResource("readme", baseOptions);
 

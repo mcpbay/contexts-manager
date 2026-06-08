@@ -39,8 +39,9 @@ export function readDirSync(resolvedPath: string) {
 }
 
 export function makeTempFileSync(suffix: string) {
-  const uniqueId = `${Date.now()}-${++tempCounter}-${Math.random().toString(36).slice(2, 8)
-    }`;
+  const uniqueId = `${Date.now()}-${++tempCounter}-${
+    Math.random().toString(36).slice(2, 8)
+  }`;
   const filePath = path.join(os.tmpdir(), `mcpb-${uniqueId}.${suffix}`);
 
   fs.writeFileSync(filePath, "", "utf-8");
@@ -63,8 +64,9 @@ export function readTextFileSync(filePath: string) {
 }
 
 export function makeTempDirSync() {
-  const uniqueId = `${Date.now()}-${++tempCounter}-${Math.random().toString(36).slice(2, 8)
-    }`;
+  const uniqueId = `${Date.now()}-${++tempCounter}-${
+    Math.random().toString(36).slice(2, 8)
+  }`;
   const dirPath = path.join(os.tmpdir(), `mcpb-${uniqueId}`);
 
   fs.mkdirSync(dirPath);
@@ -100,7 +102,7 @@ const __isDeno = getRuntime() === Runtime.Deno;
 
 export function createDenoCommand(
   args: string[],
-  options: { cwd?: string | URL; },
+  options: { cwd?: string | URL },
 ) {
   if (__isDeno) {
     return createDenoCommandOnDeno(args, options);
@@ -111,7 +113,7 @@ export function createDenoCommand(
 
 function createDenoCommandOnDeno(
   args: string[],
-  options: { cwd?: string | URL; },
+  options: { cwd?: string | URL },
 ) {
   const command = new Deno.Command("deno", {
     args,
@@ -143,7 +145,7 @@ function createDenoCommandOnDeno(
 
 function createDenoCommandOnNode(
   args: string[],
-  options: { cwd?: string | URL; },
+  options: { cwd?: string | URL },
 ) {
   return {
     spawn() {
