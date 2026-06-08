@@ -1,112 +1,197 @@
 # @mcpbay/contexts-manager
 
-A core library for managing and preparing MCP (Model Context Protocol) contexts, providing tools for execution, resource management, and AI SDK integration.
+A filesystem-based context management system for MCPBay. It enables the creation, loading, and execution of modular MCP (Model Context Protocol) contexts using a directory structure on disk.
 
-## Core Exports
+## Installation
 
-### MCPContext
+```bash
+npx jsr add @mcpbay/contexts-manager
+```
 
-The main class used to manage multiple MCP contexts, execute tools, and retrieve resources or prompts.
+Or using Deno:
 
-#### Properties
+```bash
+deno add jsr:@mcpbay/contexts-manager
+```
 
-- `tools: IPreparedTool[]`: An array of prepared tools loaded into the context.
-- `resources: IPreparedResource[]`: An array of prepared resources loaded into the context.
-- `prompts: IPrompt[]`: An array of prompts loaded into the context.
+## Context Structure
 
-#### Methods
+A context is a directory on the filesystem with the following layout:
 
-- `loadContext(path: string, options: ITSExecuteOptions): Promise<void>`
-  Loads an MCP context from the specified directory path. It reads the `context.json` and `deno.json` files, then recursively crawls the `tools`, `resources`, and `prompts` directories to prepare the context for use.
+```
+my-context/
+  context.json          # Context configuration (required)
+  deno.json             # Deno import map for TypeScript files (required if using .ts tools/resources)
+  tools/
+    hello.ts            # TypeScript tool definition
+    subfolder/
+      nested-tool.ts    # Tools can be nested in subdirectories
+  resources/
+    CONCEPT.md          # Markdown resource with frontmatter
+    data.ts             # TypeScript resource (scripted)
+  prompts/              # Reserved for future use
+```
 
-- `executeTool(name: string, args: Record<string, unknown>, options: ITSExecuteOptions): Promise<object | null>`
-  Executes a specific tool by name with the provided arguments. The tool implementation (a TypeScript file) is executed in a sub-process with permissions defined in the context configuration. The arguments are validated against the tool's input schema before execution.
+### context.json
 
-- `readResource(name: string, options: ITSExecuteOptions): Promise<string>`
-  Reads the content of a specific resource by name. If the resource is a static file (e.g., Markdown), its content is returned. If the resource is a TypeScript script, it is executed, and its return value is captured and returned as a string.
+```json
+{
+  "name": "my-context",
+  "version": "1.0.0",
+  "description": "A useful context for MCPBay",
+  "author": "godperson1",
+  "tags": ["utility"],
+  "typeScript": {
+    "allowedPackages": ["jsr:@std/assert", "npm:zod"],
+    "allowedExecutables": [],
+    "allowedDomains": [],
+    "allowedEnvs": [],
+    "allowRead": false,
+    "allowWrite": false,
+    "extraArguments": []
+  }
+}
+```
 
-### createEmptyContext
+### Tools
 
-`createEmptyContext(path: string): void`
+Tools are TypeScript files placed in the `tools/` directory. Each tool file must export two functions:
 
-Creates a new MCPBay context structure in the specified path. This includes generating a `context.json`, `deno.json`, and the necessary directory structure for tools, resources, and prompts, populated with examples.
+```ts
+import { z } from "zod";
 
-### loadAndExecuteTool
+export function toolMeta() {
+  return {
+    name: "greeting_tool",
+    description: "Give me a greeting",
+    inputSchema: z.object({
+      name: z.string().describe("Name"),
+    }).toJSONSchema(),
+  };
+}
 
-`loadAndExecuteTool(args: ILoadAndExecuteToolArguments): Promise<object | null>`
+export function toolHandler(args: Record<string, string>) {
+  const { name } = args;
 
-A convenience function that initializes a context, loads it from a specified path, and executes a tool in a single operation. This is useful for one-off tool executions without maintaining a persistent context instance.
+  return {
+    greeting: `Hello, ${name}!`,
+  };
+}
+```
 
-### loadAndReadResource
+Tools can be organized in nested subdirectories. Directories prefixed with `@` are ignored.
 
-`loadAndReadResource(args: ILoadAndReadResourceArguments): Promise<string>`
+### Resources
 
-A convenience function that initializes a context, loads it from a specified path, and reads a resource in a single operation. Useful for quickly retrieving resource content.
+Resources can be either Markdown files with YAML frontmatter or TypeScript script resources.
 
-## AI Client Exports
+**Markdown resource** (`resources/CONCEPT.md`):
 
-### loadMCP
+```markdown
+---
+name: concept
+description: My useful resource
+title: Concept
+mimeType: text/markdown
+---
 
-`loadMCP(path: string, options: IMCPContextAiOptions): Promise<ILoadMCPResponse>`
+# Concept
 
-Loads an MCP context and prepares it for use with Vercel's AI SDK. It converts tools into a format compatible with the `tool()` function from the `ai` package, allowing them to be passed directly to `generateText` or `streamText`. It also provides a utility for reading resources by name.
+Resource content goes here.
+```
 
-## Interfaces and Types
+**TypeScript resource** (`resources/data.ts`):
 
-### ILoadAndExecuteToolArguments
+```ts
+export function resourceMeta() {
+  return {
+    name: "data",
+    description: "My useful resource",
+    title: "Data",
+    mimeType: "text/plain",
+  };
+}
 
-- `contextPath: string`: Absolute path to the MCP context.
-- `toolName: string`: Name of the tool to execute.
-- `args: Record<string, unknown>`: Arguments to pass to the tool.
-- `options: ITSExecuteOptions`: Execution options.
+export function resourceHandler() {
+  return "Dynamic resource content";
+}
+```
 
-### ILoadAndReadResourceArguments
+## Usage
 
-- `contextPath: string`: Absolute path to the MCP context.
-- `resourceName: string`: Name of the resource to read.
-- `options: ITSExecuteOptions`: Execution options.
+### Creating a new context
 
-### ITSExecuteOptions
+```ts
+import { createEmptyContext } from "@mcpbay/contexts-manager";
 
-Options for TypeScript file execution, including environment permissions and configuration file paths.
+createEmptyContext("./my-context");
+```
 
-- `importsCwd: URL | string`: The base path for resolving imports.
-- `projectCwd: URL | string`: The working directory for the execution process.
-- `permissions`: Security permissions for the execution:
-  - `allowedReadDirs: string[]`: List of directories allowed for reading.
-  - `allowedWriteDirs: string[]`: List of directories allowed for writing.
-  - `allowNetDomains: string[]`: List of domains allowed for network access.
-  - `allowedPackages: string[]`: List of allowed external packages.
-  - `allowedExecutables: string[]`: List of allowed executables for subprocesses.
-  - `allowedEnvironments: string[]`: List of allowed environment variables.
-- `extraArguments: string[]`: Additional command-line arguments for the Deno process.
-- `timeout: number`: Execution timeout in milliseconds.
-- `configFilePath?: string`: Optional path to a Deno configuration file.
-- `envFilePath?: string`: Optional path to an environment file.
-- `invoke?`: Optional function invocation details:
-  - `function: string`: Name of the function to invoke.
-  - `arguments: unknown[]`: Arguments to pass to the function.
+This scaffolds a complete context directory with default configuration and example files.
 
-### IPreparedTool
+### Loading and using a context
 
-Extends the base `ITool` interface with additional properties:
-- `path`: The absolute file path to the tool implementation.
-- `configFilePath`: Optional path to the Deno configuration file.
+```ts
+import { MCPContext } from "@mcpbay/contexts-manager";
 
-### IPreparedResource
+const context = new MCPContext();
 
-Extends the base `IResource` interface with additional properties:
-- `path`: The absolute file path to the resource.
-- `configFilePath`: Optional path to the Deno configuration file.
+await context.loadContext("./my-context", {
+  importsCwd: Deno.cwd(),
+  projectCwd: Deno.cwd(),
+  permissions: {
+    allowedReadDirs: [Deno.cwd()],
+    allowedWriteDirs: [],
+    allowNetDomains: [],
+    allowedPackages: [],
+    allowedExecutables: [],
+    allowedEnvironments: [],
+  },
+  extraArguments: [],
+  timeout: 30000,
+});
 
-### IMCPContextAiOptions
+// Execute a tool
+const result = await context.executeTool("greeting_tool", { name: "World" }, options);
 
-Extends `ITSExecuteOptions` with filtering capabilities:
-- `ignore`: Optional object containing arrays of `tools`, `resources`, and `prompts` names to exclude from loading.
+// Read a resource
+const content = await context.readResource("concept", options);
+```
 
-### ILoadMCPResponse
+### Quick load-and-execute helpers
 
-The response object returned by `loadMCP`:
-- `tools`: A record of tools compatible with Vercel's AI SDK.
-- `readResource(name: string): Promise<string>`: Function to read resource content.
-- `context`: The underlying `MCPContext` instance.
+```ts
+import { loadAndExecuteTool, loadAndReadResource } from "@mcpbay/contexts-manager";
+
+const toolResult = await loadAndExecuteTool({
+  contextPath: "./my-context",
+  toolName: "greeting_tool",
+  args: { name: "World" },
+  options,
+});
+
+const resourceContent = await loadAndReadResource({
+  contextPath: "./my-context",
+  resourceName: "concept",
+  options,
+});
+```
+
+### AI SDK integration
+
+```ts
+import { loadMCP } from "@mcpbay/contexts-manager/clients/ai";
+import { generateText } from "ai";
+
+const { tools, readResource } = await loadMCP("./my-context", options);
+
+const result = await generateText({
+  model,
+  tools,
+  prompt: "Use the greeting tool to say hello",
+});
+```
+
+## License
+
+MIT

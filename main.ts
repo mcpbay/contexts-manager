@@ -260,8 +260,6 @@ export async function loadAndExecuteTool(
 
   const result = await context.executeTool(toolName, toolArgs, options);
 
-  console.log(result);
-
   return result;
 }
 
@@ -280,8 +278,6 @@ export async function loadAndReadResource(
   await context.loadContext(contextPath, options);
 
   const result = await context.readResource(resourceName, options);
-
-  console.log(result);
 
   return result;
 }
