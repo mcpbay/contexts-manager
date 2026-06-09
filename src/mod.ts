@@ -14,6 +14,7 @@ import { extractFilePathData } from "./utils/extract-file-path-data.util.ts";
 import { toObject } from "./transformers/to-object.transformer.ts";
 import { parseFrontMatter } from "./utils/parse-front-matter.util.ts";
 import { envHas } from "./utils/fs.util.ts";
+import { readTextFile } from "./utils/read-text-file.util.ts";
 
 const contextConfigJsonSchema = z.object({
   name: z.string().trim().toLowerCase().describe("Context name").catch(
@@ -95,22 +96,29 @@ export interface IPreparedContextResponse {
   resources: IPreparedResource[];
   tools: IPreparedTool[];
   prompts: IPrompt[];
+  agents: string;
 }
 
 export async function prepareContext(
   path: string,
   options: Omit<ITSExecuteOptions, "permissions">,
 ): Promise<IPreparedContextResponse> {
+  const agentsMdPath = `${path}/AGENTS.md`;
   const contextConfigPath = `${path}/context.json`;
   const denoConfigPath = `${path}/deno.json`;
-  const isContextDirExists = exists(path, true);
-  const isContextConfigExists = exists(contextConfigPath);
+  const isContextDirPresent = exists(path, true);
+  const isContextConfigPresent = exists(contextConfigPath);
+  const isAgentsMdPresent = exists(agentsMdPath);
 
-  crashIfNot(isContextDirExists, `Context dir \`${path}\` does not exist.`);
+  crashIfNot(isContextDirPresent, `Context dir \`${path}\` does not exist.`);
   crashIfNot(
-    isContextConfigExists,
+    isContextConfigPresent,
     `Context config \`${contextConfigPath}\` does not exist.`,
   );
+
+  const agents = isAgentsMdPresent
+    ? readTextFile(agentsMdPath)
+    : "";
 
   const contextConfig = readJsonFromFile<IContextConfig>(contextConfigPath);
   const allowedEnvironments = contextConfig.typeScript?.allowedEnvironments ??
@@ -190,6 +198,7 @@ export async function prepareContext(
     resources,
     tools,
     prompts,
+    agents
   };
 }
 

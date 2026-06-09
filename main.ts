@@ -30,6 +30,7 @@ export interface ILoadContextOptions {
 }
 
 export class MCPContext {
+  public readonly agents: string = ""; // This will be updated later, with `loadContext` method.
   public readonly tools: IPreparedTool[] = [];
   public readonly resources: IPreparedResource[] = [];
   public readonly prompts: IPrompt[] = [];
@@ -82,15 +83,13 @@ export class MCPContext {
       loadPath = tempDir;
     }
 
-    const { prompts, resources, tools } = await prepareContext(
+    const { prompts, resources, tools, agents } = await prepareContext(
       loadPath,
       tsExecutionOptions,
     );
 
-    this.prompts.push(...prompts);
-    this.resources.push(...resources);
-    this.tools.push(...tools);
     this.#loadedPaths.add(path);
+    Object.assign(this, { agents, prompts, resources, tools });
   }
 
   dispose() {
@@ -383,10 +382,9 @@ export async function loadContextFromGitHub(
     (typeof args.source !== "string" ? args.source.token : undefined);
   const path = typeof args.source === "string"
     ? args.source
-    : `github://${args.source.owner}/${args.source.repo}${
-      args.source.branch && args.source.branch !== "main"
-        ? `/tree/${args.source.branch}`
-        : ""
+    : `github://${args.source.owner}/${args.source.repo}${args.source.branch && args.source.branch !== "main"
+      ? `/tree/${args.source.branch}`
+      : ""
     }${args.source.path ? `/${args.source.path}` : ""}`;
 
   await context.loadContext(path, {
