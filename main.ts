@@ -89,7 +89,10 @@ export class MCPContext {
     );
 
     this.#loadedPaths.add(path);
-    Object.assign(this, { agents, prompts, resources, tools });
+    this.prompts.push(...prompts);
+    this.resources.push(...resources);
+    this.tools.push(...tools);
+    Object.assign(this, { agents });
   }
 
   dispose() {
@@ -281,6 +284,12 @@ export function toolHandler(args: Record<string, string>) {
       name: "deno",
       extension: "json",
       content: DEFAULT_DENO_JSON_CONTENT,
+    },
+    {
+      type: "file",
+      name: "AGENTS",
+      extension: "md",
+      content: "",
     },
     { type: "folder", name: "tools", files: [] },
     {
