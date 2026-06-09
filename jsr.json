@@ -1,6 +1,6 @@
 {
   "name": "@mcpbay/contexts-manager",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "exports": {
     ".": "./main.ts",
     "./clients/ai": "./clients/ai.ts"
