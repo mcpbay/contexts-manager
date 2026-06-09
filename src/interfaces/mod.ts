@@ -11,6 +11,7 @@ export interface IContextConfig {
 }
 
 export interface IContext {
+  agents: string;
   resources: IResource[];
   prompts: IPrompt[];
   tools: ITool[];

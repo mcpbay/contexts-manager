@@ -29,6 +29,8 @@ export interface ILoadContextOptions {
   githubToken?: string;
 }
 
+export type { IContextConfig, IContext } from "./src/interfaces/mod.ts";
+
 export class MCPContext {
   public readonly agents: string = ""; // This will be updated later, with `loadContext` method.
   public readonly tools: IPreparedTool[] = [];
