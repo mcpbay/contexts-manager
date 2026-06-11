@@ -2,8 +2,8 @@ import type { IPrompt } from "@mcpbay/easy-mcp-server/types";
 import { parseFrontMatter } from "./src/utils/parse-front-matter.util.ts";
 import { crashIfNot } from "./src/utils/crash-if-not.util.ts";
 import {
-  executeTypeScriptFile,
   type ITSExecuteOptions,
+  executeTypeScriptFile,
 } from "./src/utils/ts-execute.util.ts";
 import * as z from "zod";
 import { toObject } from "./src/transformers/to-object.transformer.ts";
@@ -11,25 +11,28 @@ import { isScriptResource } from "./src/validators/is-script-resource.validator.
 import {
   type IPreparedResource,
   type IPreparedTool,
+  MCPBAY_CONTEXTS_MANAGER_CONTEXT_TYPE,
   prepareContext,
 } from "./src/mod.ts";
 import { build } from "./src/utils/build.util.ts";
 import { exists } from "./src/utils/exists.util.ts";
 import { mkdirSync, removeSync } from "./src/utils/fs.util.ts";
 import {
-  downloadGitHubContext,
   type IGitHubContextSource,
+  downloadGitHubContext,
   parseGitHubURI,
 } from "./src/utils/download-github-context.util.ts";
+import type { IContextConfig } from "./src/interfaces/mod.ts";
 
-export interface ILoadContextOptions {
-  tsExecutionOptions: ITSExecuteOptions;
-  allowGithubContext?: boolean;
-  githubContextDestinyDirPath?: string;
-  githubToken?: string;
+export interface IGithubOptions {
+  allowGithubContext: boolean;
+  githubContextDestinyDirPath: string;
+  githubToken: string;
 }
 
-export type { IContextConfig, IContext } from "./src/interfaces/mod.ts";
+export interface IMCPContextOptions extends IGithubOptions { }
+
+export type { IContextConfig };
 
 export class MCPContext {
   public readonly agents: string = ""; // This will be updated later, with `loadContext` method.
@@ -39,8 +42,10 @@ export class MCPContext {
   readonly #loadedPaths = new Set<string>();
   readonly #tempDirs = new Set<string>();
   readonly #cleanupRegistry: FinalizationRegistry<string>;
+  #githubOptions?: Partial<IGithubOptions>;
 
-  constructor() {
+  constructor(options?: Partial<IMCPContextOptions>) {
+    this.#githubOptions = options;
     this.#cleanupRegistry = new FinalizationRegistry((tempDir) => {
       try {
         removeSync(tempDir);
@@ -50,13 +55,7 @@ export class MCPContext {
     });
   }
 
-  async loadContext(path: string, options: ILoadContextOptions) {
-    const {
-      tsExecutionOptions,
-      allowGithubContext,
-      githubContextDestinyDirPath,
-      githubToken,
-    } = options;
+  async loadContext(path: string, options: ITSExecuteOptions) {
     const isAlreadyLoaded = this.#loadedPaths.has(path);
 
     crashIfNot(
@@ -67,17 +66,17 @@ export class MCPContext {
     let loadPath = path;
 
     if (path.startsWith("github://")) {
-      crashIfNot(allowGithubContext, "Github context is not allowed.");
+      crashIfNot(this.#githubOptions?.allowGithubContext, "Github context is not allowed.");
 
       const source = parseGitHubURI(path);
 
-      if (githubToken) {
-        source.token = githubToken;
+      if (this.#githubOptions?.githubToken) {
+        source.token = this.#githubOptions?.githubToken;
       }
 
       const tempDir = await downloadGitHubContext(
         source,
-        githubContextDestinyDirPath,
+        this.#githubOptions?.githubContextDestinyDirPath,
       );
 
       this.#tempDirs.add(tempDir);
@@ -87,7 +86,7 @@ export class MCPContext {
 
     const { prompts, resources, tools, agents } = await prepareContext(
       loadPath,
-      tsExecutionOptions,
+      options,
     );
 
     this.#loadedPaths.add(path);
@@ -196,21 +195,25 @@ export function createEmptyContext(path: string) {
   };
 
   const DEFAULT_CONTEXT_JSON_CONTENT = {
-    name: "",
+    name: "test_context",
     version: "1.0.0",
     description: "A useful context for MCPBay!",
-    author: "godperson1",
+    author: "GodPerson_I",
     tags: [],
-    typeScript: {
-      allowedPackages: ["jsr:@std/assert", "npm:zod"],
-      allowedExecutables: [],
-      allowedDomains: [],
-      allowedEnvs: [],
-      allowRead: [],
-      allowWrite: [],
+    deno: {
+      permissions: {
+        allowedPackages: ["jsr:@std/assert", "npm:zod"],
+        allowedExecutables: [],
+        allowedEnvironments: [],
+        allowedReadDirs: [],
+        allowedWriteDirs: [],
+        allowNetDomains: [],
+      },
       extraArguments: [],
+      timeout: 5000,
     },
-  };
+    contextType: MCPBAY_CONTEXTS_MANAGER_CONTEXT_TYPE,
+  } satisfies IContextConfig;
 
   const DEFAULT_RESOURCE_EXAMPLE_CONTENT = `
 ---
@@ -352,7 +355,7 @@ export async function loadAndExecuteTool(
   const { contextPath, toolName, args: toolArgs, options } = args;
   const context = new MCPContext();
 
-  await context.loadContext(contextPath, { tsExecutionOptions: options });
+  await context.loadContext(contextPath, options);
 
   const result = await context.executeTool(toolName, toolArgs, options);
 
@@ -371,7 +374,7 @@ export async function loadAndReadResource(
   const { contextPath, resourceName, options } = args;
   const context = new MCPContext();
 
-  await context.loadContext(contextPath, { tsExecutionOptions: options });
+  await context.loadContext(contextPath, options);
 
   const result = await context.readResource(resourceName, options);
 
@@ -388,9 +391,14 @@ export interface ILoadContextFromGitHubArguments {
 export async function loadContextFromGitHub(
   args: ILoadContextFromGitHubArguments,
 ): Promise<MCPContext> {
-  const context = new MCPContext();
-  const token = args.token ??
-    (typeof args.source !== "string" ? args.source.token : undefined);
+  const token =
+    args.token ?? (typeof args.source !== "string" ? args.source.token : undefined);
+  const context = new MCPContext({
+    allowGithubContext: true,
+    githubContextDestinyDirPath: args.destinyDir,
+    githubToken: token,
+  });
+
   const path = typeof args.source === "string"
     ? args.source
     : `github://${args.source.owner}/${args.source.repo}${args.source.branch && args.source.branch !== "main"
@@ -398,12 +406,7 @@ export async function loadContextFromGitHub(
       : ""
     }${args.source.path ? `/${args.source.path}` : ""}`;
 
-  await context.loadContext(path, {
-    tsExecutionOptions: args.options,
-    allowGithubContext: true,
-    githubContextDestinyDirPath: args.destinyDir,
-    githubToken: token,
-  });
+  await context.loadContext(path, args.options);
 
   return context;
 }

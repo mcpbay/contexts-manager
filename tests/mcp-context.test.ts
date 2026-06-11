@@ -198,12 +198,8 @@ Content 3`,
         timeout: 30000,
       };
 
-      await mcpContext.loadContext(context1Dir, {
-        tsExecutionOptions: options,
-      });
-      await mcpContext.loadContext(context2Dir, {
-        tsExecutionOptions: options,
-      });
+      await mcpContext.loadContext(context1Dir, options);
+      await mcpContext.loadContext(context2Dir, options);
 
       expect(mcpContext.tools.length).toBe(3);
       expect(mcpContext.resources.length).toBe(3);
@@ -316,7 +312,7 @@ test(
       };
 
       await expect(
-        mcpContext.loadContext(contextDir, { tsExecutionOptions: options }),
+        mcpContext.loadContext(contextDir, options),
       ).rejects.toThrow(
         "requires a `deno.json` file",
       );
@@ -373,7 +369,7 @@ test(
         timeout: 5000,
       };
 
-      await mcpContext.loadContext(contextDir, { tsExecutionOptions: options });
+      await mcpContext.loadContext(contextDir, options);
 
       expect(mcpContext.resources.length).toBe(1);
       expect(mcpContext.tools.length).toBe(0);

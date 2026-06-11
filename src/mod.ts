@@ -15,6 +15,9 @@ import { toObject } from "./transformers/to-object.transformer.ts";
 import { parseFrontMatter } from "./utils/parse-front-matter.util.ts";
 import { envHas } from "./utils/fs.util.ts";
 import { readTextFile } from "./utils/read-text-file.util.ts";
+import { isUndefined } from "@online/is";
+
+export const MCPBAY_CONTEXTS_MANAGER_CONTEXT_TYPE = "mcpbay-contexts-manager";
 
 const contextConfigJsonSchema = z.object({
   name: z.string().trim().toLowerCase().describe("Context name").catch(
@@ -121,7 +124,14 @@ export async function prepareContext(
     : "";
 
   const contextConfig = readJsonFromFile<IContextConfig>(contextConfigPath);
-  const allowedEnvironments = contextConfig.typeScript?.allowedEnvironments ??
+  const { contextType } = contextConfig;
+
+  crashIfNot(
+    isUndefined(contextType) || contextType === MCPBAY_CONTEXTS_MANAGER_CONTEXT_TYPE,
+    `Context type \`${contextType}\` is not supported.`
+  );
+
+  const allowedEnvironments = contextConfig.deno?.permissions?.allowedEnvironments ??
     [];
   const hasDenoConfig = exists(denoConfigPath);
 
@@ -138,11 +148,11 @@ export async function prepareContext(
     ...options,
     permissions: {
       allowedEnvironments,
-      allowedExecutables: contextConfig.typeScript?.allowedExecutables ?? [],
-      allowedPackages: contextConfig.typeScript?.allowedPackages ?? [],
+      allowedExecutables: contextConfig.deno?.permissions?.allowedExecutables ?? [],
+      allowedPackages: contextConfig.deno?.permissions?.allowedPackages ?? [],
       allowedReadDirs: [],
       allowedWriteDirs: [],
-      allowNetDomains: contextConfig.typeScript?.allowNetDomains ?? [],
+      allowNetDomains: contextConfig.deno?.permissions?.allowNetDomains ?? [],
     },
   };
 

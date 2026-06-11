@@ -1,10 +1,10 @@
 {
-  "name": "example-context",
+  "name": "example_context",
   "version": "1.0.0",
   "description": "Example MCPBay context for testing loadContextFromGitHub",
   "author": "mcpbay-user",
   "tags": ["example", "test", "demo"],
-  "typeScript": {
+  "denoPermissions": {
     "allowedPackages": [
       "jsr:@std/assert",
       "npm:zod"

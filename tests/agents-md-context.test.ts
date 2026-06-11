@@ -106,9 +106,7 @@ test(
 
       const context = new MCPContext();
 
-      await context.loadContext(contextDir, {
-        tsExecutionOptions: baseOptions,
-      });
+      await context.loadContext(contextDir, baseOptions);
 
       expect(context.agents).toBe(agentsContent);
     } finally {
@@ -129,9 +127,7 @@ test(
 
       const context = new MCPContext();
 
-      await context.loadContext(contextDir, {
-        tsExecutionOptions: baseOptions,
-      });
+      await context.loadContext(contextDir, baseOptions);
 
       expect(context.agents).toBe("");
     } finally {

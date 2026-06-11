@@ -75,7 +75,7 @@ test("MCPContext - Verify tools have the correct cwd", async () => {
       timeout: 30000,
     };
 
-    await mcpContext.loadContext(contextDir, { tsExecutionOptions: options });
+    await mcpContext.loadContext(contextDir, options);
     const result = await mcpContext.executeTool("cwd_tool", {}, options);
 
     // deno-lint-ignore no-explicit-any
@@ -131,8 +131,8 @@ test(
       writeTextFileSync(
         join(toolsDir, "env-tool.ts"),
         "export function toolMeta() { return { name: 'env_tool', description: 'd', inputSchema: { type: 'object' } }; } " +
-          "export function toolHandler() { return { value: Deno.env.get('" +
-          TEST_VAR_NAME + "') }; }",
+        "export function toolHandler() { return { value: Deno.env.get('" +
+        TEST_VAR_NAME + "') }; }",
       );
 
       const mcpContext = new MCPContext();
@@ -151,7 +151,7 @@ test(
         timeout: 30000,
       };
 
-      await mcpContext.loadContext(contextDir, { tsExecutionOptions: options });
+      await mcpContext.loadContext(contextDir, options);
       const result = await mcpContext.executeTool("env_tool", {}, options);
 
       // deno-lint-ignore no-explicit-any
@@ -187,8 +187,10 @@ test(
         description: "Context",
         author: "Author",
         tags: [],
-        typeScript: {
-          allowedEnvironments: [REQUIRED_VAR],
+        deno: {
+          permissions: {
+            allowedEnvironments: [REQUIRED_VAR],
+          }
         },
       };
 
@@ -215,7 +217,7 @@ test(
       };
 
       await expect(
-        mcpContext.loadContext(contextDir, { tsExecutionOptions: options }),
+        mcpContext.loadContext(contextDir, options),
       ).rejects.toThrow(
         `Environment variable \`${REQUIRED_VAR}\` is required but not set.`,
       );

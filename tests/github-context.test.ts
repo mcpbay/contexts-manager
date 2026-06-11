@@ -230,12 +230,11 @@ test(
 test(
   "GitHub context - MCPContext.loadContext with github:// URI",
   async () => {
-    const context = new MCPContext();
-
-    await context.loadContext(GITHUB_URI, {
-      tsExecutionOptions: baseOptions,
+    const context = new MCPContext({
       allowGithubContext: true,
     });
+
+    await context.loadContext(GITHUB_URI, baseOptions);
 
     try {
       expect(context.tools.length).toBe(1);
@@ -262,13 +261,12 @@ test(
 test(
   "GitHub context - MCPContext.loadContext rejects when allowGithubContext is false",
   async () => {
-    const context = new MCPContext();
+    const context = new MCPContext({
+      allowGithubContext: false,
+    });
 
     await expect(
-      context.loadContext(GITHUB_URI, {
-        tsExecutionOptions: baseOptions,
-        allowGithubContext: false,
-      }),
+      context.loadContext(GITHUB_URI, baseOptions),
     ).rejects.toThrow("Github context is not allowed");
   },
   DENO_PERMISSIONS,
@@ -359,13 +357,12 @@ test(
   async () => {
     const existingToken = envGet("GITHUB_TOKEN");
     const testToken = existingToken || "ghp_test_token_placeholder";
-    const context = new MCPContext();
-
-    await context.loadContext(GITHUB_URI, {
-      tsExecutionOptions: baseOptions,
+    const context = new MCPContext({
       allowGithubContext: true,
       githubToken: testToken,
     });
+
+    await context.loadContext(GITHUB_URI, baseOptions);
 
     try {
       expect(context.tools.length).toBe(1);

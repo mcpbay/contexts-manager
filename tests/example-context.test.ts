@@ -65,9 +65,7 @@ test(
   async () => {
     const context = new MCPContext();
 
-    await context.loadContext(exampleContextDir, {
-      tsExecutionOptions: baseOptions,
-    });
+    await context.loadContext(exampleContextDir, baseOptions);
 
     expect(context.tools.length).toBe(1);
     expect(context.resources.length).toBe(2);
@@ -92,9 +90,7 @@ test(
   async () => {
     const context = new MCPContext();
 
-    await context.loadContext(exampleContextDir, {
-      tsExecutionOptions: baseOptions,
-    });
+    await context.loadContext(exampleContextDir, baseOptions);
 
     const content = await context.readResource("readme", baseOptions);
 
