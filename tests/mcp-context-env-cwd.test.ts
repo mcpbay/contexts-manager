@@ -24,6 +24,9 @@ test("MCPContext - Verify tools have the correct cwd", async () => {
   const contextDir = join(tempDir, "context");
 
   mkdirSync(contextDir);
+  mkdirSync(join(contextDir, "resources"));
+  mkdirSync(join(contextDir, "prompts"));
+  mkdirSync(join(contextDir, "tools"));
 
   try {
     const contextConfig = {
@@ -101,6 +104,9 @@ test(
     const contextDir = join(tempDir, "context");
 
     mkdirSync(contextDir);
+    mkdirSync(join(contextDir, "resources"));
+    mkdirSync(join(contextDir, "tools"));
+    mkdirSync(join(contextDir, "prompts"));
 
     const TEST_VAR_NAME = "MCPB_TEST_VAR";
     const TEST_VAR_VALUE = "hello-world";
@@ -175,6 +181,9 @@ test(
     const contextDir = join(tempDir, "context");
 
     mkdirSync(contextDir);
+    mkdirSync(join(contextDir, "resources"));
+    mkdirSync(join(contextDir, "tools"));
+    mkdirSync(join(contextDir, "prompts"));
 
     const REQUIRED_VAR = "MISSING_REQUIRED_VAR";
 

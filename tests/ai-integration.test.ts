@@ -22,6 +22,9 @@ test("loadMCP - Integration with AI SDK generateText", async () => {
 
   mkdirSync(contextDir);
   mkdirSync(projectCwd);
+  mkdirSync(`${contextDir}/resources`);
+  mkdirSync(`${contextDir}/prompts`);
+  mkdirSync(`${contextDir}/tools`);
 
   try {
     const contextConfig = {

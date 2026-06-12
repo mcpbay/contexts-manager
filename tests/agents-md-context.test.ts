@@ -19,6 +19,9 @@ function createMinimalContext(
   agentsMdContent?: string,
 ) {
   mkdirSync(dir);
+  mkdirSync(`${dir}/resources`);
+  mkdirSync(`${dir}/prompts`);
+  mkdirSync(`${dir}/tools`);
 
   writeTextFileSync(
     join(dir, "context.json"),

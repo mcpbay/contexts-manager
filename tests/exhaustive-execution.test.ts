@@ -20,6 +20,8 @@ test(
 
     mkdirSync(contextDir);
     mkdirSync(join(contextDir, "tools"));
+    mkdirSync(join(contextDir, "resources"));
+    mkdirSync(join(contextDir, "prompts"));
 
     try {
       writeTextFileSync(
@@ -96,6 +98,8 @@ test(
 
     mkdirSync(contextDir);
     mkdirSync(join(contextDir, "tools"));
+    mkdirSync(join(contextDir, "resources"));
+    mkdirSync(join(contextDir, "prompts"));
 
     try {
       writeTextFileSync(
@@ -153,6 +157,8 @@ test(
 
     mkdirSync(contextDir);
     mkdirSync(join(contextDir, "resources"));
+    mkdirSync(join(contextDir, "prompts"));
+    mkdirSync(join(contextDir, "tools"));
 
     try {
       writeTextFileSync(
@@ -207,6 +213,8 @@ test("MCPContext - Exhaustive Execution: Tool handler failure", async () => {
 
   mkdirSync(contextDir);
   mkdirSync(join(contextDir, "tools"));
+  mkdirSync(join(contextDir, "resources"));
+  mkdirSync(join(contextDir, "prompts"));
 
   try {
     writeTextFileSync(

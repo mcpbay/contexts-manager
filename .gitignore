@@ -5,3 +5,4 @@ opencode.jsonc
 mcp-config.json
 AGENTS.md
 node_modules
+*/*.lock

@@ -25,7 +25,13 @@ test(
     const context2Dir = join(tempDir, "context2");
 
     mkdirSync(context1Dir);
+    mkdirSync(join(context1Dir, "resources"));
+    mkdirSync(join(context1Dir, "prompts"));
+    mkdirSync(join(context1Dir, "tools"));
     mkdirSync(context2Dir);
+    mkdirSync(join(context2Dir, "resources"));
+    mkdirSync(join(context2Dir, "prompts"));
+    mkdirSync(join(context2Dir, "tools"));
 
     try {
       const context1Config = {
@@ -272,6 +278,9 @@ test(
     const contextDir = join(tempDir, "bad-context");
 
     mkdirSync(contextDir);
+    mkdirSync(join(contextDir, "resources"));
+    mkdirSync(join(contextDir, "tools"));
+    mkdirSync(join(contextDir, "prompts"));
 
     try {
       const contextConfig = {
@@ -330,6 +339,9 @@ test(
     const contextDir = join(tempDir, "md-only-context");
 
     mkdirSync(contextDir);
+    mkdirSync(join(contextDir, "prompts"));
+    mkdirSync(join(contextDir, "tools"));
+    mkdirSync(join(contextDir, "resources"));
 
     try {
       const contextConfig = {
