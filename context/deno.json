@@ -1,0 +1,8 @@
+{
+  "tasks": {
+    "check": "deno check main.ts"
+  },
+  "imports": {
+    "zod": "npm:zod@^4.3.6"
+  }
+}

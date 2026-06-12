@@ -1,0 +1,20 @@
+{
+  "name": "contexts-manager-api-reference",
+  "version": "1.0.0",
+  "description": "Complete API reference, usage guide, and tooling for @mcpbay/contexts-manager. Describes every class, interface, function, type, and utility exported by the package. Includes a resource explaining how to build context projects for LLMs and a tool to initialize new contexts.",
+  "author": "mcpbay",
+  "tags": ["mcpbay", "contexts-manager", "context", "mcp", "api-reference", "scaffold"],
+  "contextType": "mcpbay-contexts-manager",
+  "deno": {
+    "permissions": {
+      "allowedPackages": ["npm:zod", "jsr:@std/path", "jsr:@std/assert", "jsr:@online/is", "jsr:@online/runtime"],
+      "allowedExecutables": [],
+      "allowedEnvironments": [],
+      "allowedReadDirs": [],
+      "allowedWriteDirs": [],
+      "allowNetDomains": []
+    },
+    "extraArguments": [],
+    "timeout": 30000
+  }
+}

@@ -23,6 +23,7 @@ import {
   parseGitHubURI,
 } from "./src/utils/download-github-context.util.ts";
 import type { IContextConfig } from "./src/interfaces/mod.ts";
+import { isContextProjectFolder } from "./src/validators/is-context-project-folder.validator.ts";
 
 export interface IGithubOptions {
   allowGithubContext: boolean;
@@ -33,6 +34,7 @@ export interface IGithubOptions {
 export interface IMCPContextOptions extends IGithubOptions { }
 
 export type { IContextConfig };
+export { isContextProjectFolder };
 
 export class MCPContext {
   public readonly agents: string = ""; // This will be updated later, with `loadContext` method.
@@ -82,6 +84,10 @@ export class MCPContext {
       this.#tempDirs.add(tempDir);
       this.#cleanupRegistry.register(this, tempDir);
       loadPath = tempDir;
+    }
+
+    if (!isContextProjectFolder(loadPath)) {
+      loadPath = `${loadPath}/context`;
     }
 
     const { prompts, resources, tools, agents } = await prepareContext(

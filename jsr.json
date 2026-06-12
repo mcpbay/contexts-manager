@@ -1,6 +1,6 @@
 {
   "name": "@mcpbay/contexts-manager",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "exports": {
     ".": "./main.ts",
     "./clients/ai": "./clients/ai.ts"
@@ -18,7 +18,8 @@
       ".vscode",
       "context_modules",
       ".github",
-      "tests"
+      "tests",
+      "context"
     ]
   },
   "license": "MIT",
