@@ -307,7 +307,7 @@ test(
         const contextJson = JSON.parse(
           readTextFileSync(join(destinyDir, "context.json")),
         );
-        expect(contextJson.name).toBe("example-context");
+        expect(contextJson.name).toBe("example_context");
 
         const result = await context.executeTool(
           "greeting_tool",

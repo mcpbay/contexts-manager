@@ -29,15 +29,19 @@ const contextConfigJsonSchema = z.object({
   ),
   author: z.string().trim().describe("Context author").catch("Context author"),
   tags: z.array(z.string().trim().toLowerCase()).describe("Context tags"),
-  typeScript: z.object({
-    allowedPackages: z.array(z.string()).optional().catch([]),
-    allowedExecutables: z.array(z.string()).optional().catch([]),
-    allowNetDomains: z.array(z.string()).optional().catch([]),
-    allowedEnvironments: z.array(z.string()).optional().catch([]),
-    allowRead: z.boolean().optional().catch(false),
-    allowWrite: z.boolean().optional().catch(false),
+  contextType: z.string().describe("The context type").catch("Context type"),
+  deno: z.object({
+    permissions: z.object({
+      allowedReadDirs: z.array(z.string()).optional().catch([]),
+      allowedWriteDirs: z.array(z.string()).optional().catch([]),
+      allowNetDomains: z.array(z.string()).optional().catch([]),
+      allowedPackages: z.array(z.string()).optional().catch([]),
+      allowedExecutables: z.array(z.string()).optional().catch([]),
+      allowedEnvironments: z.array(z.string()).optional().catch([]),
+    }),
     extraArguments: z.array(z.string()).optional().catch([]),
-  }).optional(),
+    timeout: z.number().optional().catch(5000),
+  }).optional().catch({ permissions: {}, extraArguments: [], timeout: 5000 }),
 });
 
 const contextResourceMetaJsonSchema = z.object({
@@ -131,8 +135,8 @@ export async function prepareContext(
     `Context type \`${contextType}\` is not supported.`
   );
 
-  const allowedEnvironments = contextConfig.deno?.permissions?.allowedEnvironments ??
-    [];
+  const allowedEnvironments =
+    contextConfig.deno?.permissions?.allowedEnvironments ?? [];
   const hasDenoConfig = exists(denoConfigPath);
 
   for (const env of allowedEnvironments) {
