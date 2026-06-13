@@ -91,7 +91,14 @@ export class MCPContext {
     }
 
     if (!isContextProjectFolder(loadPath)) {
-      loadPath = `${loadPath}/context`;
+      const contextDir = `${loadPath}/context`;
+
+      crashIfNot(
+        exists(contextDir, true),
+        `Not context project found in path \`${path}\`.`,
+      );
+
+      loadPath = contextDir;
     }
 
     const { prompts, resources, tools, agents } = await prepareContext(
