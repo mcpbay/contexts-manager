@@ -12,9 +12,8 @@ import {
 import { exists } from "../src/utils/exists.util.ts";
 import { loadContextFromGitHub, MCPContext } from "../main.ts";
 import {
-  type IGitHubContextSource,
   isStandardGitUrl,
-  parseGitUrl,
+  parseGitUrl
 } from "../src/utils/download-github-context.util.ts";
 import { DENO_PERMISSIONS } from "./constants.ts";
 

@@ -59,7 +59,7 @@ export class MCPContext {
     });
   }
 
-  async loadContext(path: string, options: ITSExecuteOptions) {
+  async loadContext(path: string, options: ITSExecuteOptions): Promise<IContextConfig> {
     const isAlreadyLoaded = this.#loadedPaths.has(path);
 
     crashIfNot(

@@ -13,7 +13,6 @@ import { getDirectoryContent } from "./utils/get-directory-content.util.ts";
 import { extractFilePathData } from "./utils/extract-file-path-data.util.ts";
 import { toObject } from "./transformers/to-object.transformer.ts";
 import { parseFrontMatter } from "./utils/parse-front-matter.util.ts";
-import { envHas } from "./utils/fs.util.ts";
 import { readTextFile } from "./utils/read-text-file.util.ts";
 import { isUndefined } from "@online/is";
 
