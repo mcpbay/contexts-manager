@@ -104,6 +104,7 @@ export interface IPreparedContextResponse {
   tools: IPreparedTool[];
   prompts: IPrompt[];
   agents: string;
+  contextConfig: IContextConfig;
 }
 
 export async function prepareContext(
@@ -139,14 +140,14 @@ export async function prepareContext(
     contextConfig.deno?.permissions?.allowedEnvironments ?? [];
   const hasDenoConfig = exists(denoConfigPath);
 
-  for (const env of allowedEnvironments) {
-    const isEnvPresent = envHas(env);
+  // for (const env of allowedEnvironments) {
+  //   const isEnvPresent = envHas(env);
 
-    crashIfNot(
-      isEnvPresent,
-      `Environment variable \`${env}\` is required but not set.`,
-    );
-  }
+  //   crashIfNot(
+  //     isEnvPresent,
+  //     `Environment variable \`${env}\` is required but not set.`,
+  //   );
+  // }
 
   const _options: ITSExecuteOptions = {
     ...options,
@@ -212,7 +213,8 @@ export async function prepareContext(
     resources,
     tools,
     prompts,
-    agents
+    agents,
+    contextConfig
   };
 }
 

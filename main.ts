@@ -16,7 +16,7 @@ import {
 } from "./src/mod.ts";
 import { build } from "./src/utils/build.util.ts";
 import { exists } from "./src/utils/exists.util.ts";
-import { mkdirSync, removeSync } from "./src/utils/fs.util.ts";
+import { envHas, mkdirSync, removeSync } from "./src/utils/fs.util.ts";
 import {
   type IGitHubContextSource,
   downloadGitHubContext,
@@ -101,7 +101,7 @@ export class MCPContext {
       loadPath = contextDir;
     }
 
-    const { prompts, resources, tools, agents } = await prepareContext(
+    const { prompts, resources, tools, agents, contextConfig } = await prepareContext(
       loadPath,
       options,
     );
@@ -111,6 +111,8 @@ export class MCPContext {
     this.resources.push(...resources);
     this.tools.push(...tools);
     Object.assign(this, { agents });
+
+    return contextConfig;
   }
 
   dispose() {
@@ -130,6 +132,8 @@ export class MCPContext {
     args: Record<string, unknown>,
     options: ITSExecuteOptions,
   ): Promise<object | null> {
+    areEnvironmentVariablesSet(options?.permissions?.allowedEnvironments ?? []);
+
     const tool = this.tools.find((tool) => tool.name === name);
 
     crashIfNot(tool, `Tool \`${name}\` not found.`);
@@ -157,6 +161,8 @@ export class MCPContext {
     name: string,
     options: ITSExecuteOptions,
   ): Promise<string> {
+    areEnvironmentVariablesSet(options?.permissions?.allowedEnvironments ?? []);
+
     const resource = this.resources.find((resource) => resource.name === name);
 
     crashIfNot(resource, `Resource \`${name}\` not found.`);
@@ -364,6 +370,17 @@ export interface ILoadAndExecuteToolArguments {
   toolName: string;
   args: Record<string, unknown>;
   options: ITSExecuteOptions;
+}
+
+function areEnvironmentVariablesSet(envs: string[]) {
+  for (const env of envs) {
+    const isEnvPresent = envHas(env);
+
+    crashIfNot(
+      isEnvPresent,
+      `Environment variable \`${env}\` is required but not set.`,
+    );
+  }
 }
 
 export async function loadAndExecuteTool(

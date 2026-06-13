@@ -209,6 +209,15 @@ test(
       );
       writeTextFileSync(join(contextDir, "deno.json"), JSON.stringify({}));
 
+      const toolsDir = join(contextDir, "tools");
+
+      writeTextFileSync(
+        join(toolsDir, "env-tool.ts"),
+        "export function toolMeta() { return { name: 'env_tool', description: 'd', inputSchema: { type: 'object' } }; } " +
+        "export function toolHandler() { return { value: Deno.env.get('" +
+        REQUIRED_VAR + "') }; }",
+      );
+
       const mcpContext = new MCPContext();
       const options: ITSExecuteOptions = {
         importsCwd: projectRoot,
@@ -225,8 +234,10 @@ test(
         timeout: 30000,
       };
 
+      await mcpContext.loadContext(contextDir, options);
+
       await expect(
-        mcpContext.loadContext(contextDir, options),
+        mcpContext.executeTool("env_tool", {}, options),
       ).rejects.toThrow(
         `Environment variable \`${REQUIRED_VAR}\` is required but not set.`,
       );
