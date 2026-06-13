@@ -95,7 +95,7 @@ export class MCPContext {
 
       crashIfNot(
         exists(contextDir, true),
-        `Not context project found in path \`${path}\`.`,
+        `Not context project found in path \`${path}\`. Also checked on \`${contextDir}\`.`,
       );
 
       loadPath = contextDir;

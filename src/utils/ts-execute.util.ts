@@ -94,7 +94,6 @@ if(_mcpb_result !== undefined) {
   const allowedEnvironmentsJoined = Array.from(allowedEnvironments).join(",");
 
   args.push(`--allow-env=${allowedEnvironmentsJoined}`);
-
   args.push(...extraArguments);
 
   if (configFilePath) {
@@ -130,7 +129,7 @@ if(_mcpb_result !== undefined) {
   if (!success) {
     removeSync(codeFilePath);
     const errorMessage = decoder.decode(stderr);
-    throw new Error(errorMessage);
+    throw new Error(`${errorMessage}\nOn file: ${scriptPath}`);
   }
 
   const outMessage = decoder.decode(stdout).trim();
