@@ -179,3 +179,73 @@ export function parseGitHubURI(uri: string): IGitHubContextSource {
 
   return { owner, repo, branch, path };
 }
+
+const GITLAB_HOSTS = ["github.com"];
+const GIT_HTTPS_REGEX = /^https:\/\/([^\/]+)\/([^\/]+)\/([^\/]+?)(?:\.git)?(?:\/(.*))?$/;
+const GIT_SSH_REGEX = /^git@([^:]+):([^\/]+)\/([^\/]+?)(?:\.git)?(?:\/(.*))?$/;
+
+export function isStandardGitUrl(url: string): boolean {
+  return GIT_HTTPS_REGEX.test(url) || GIT_SSH_REGEX.test(url);
+}
+
+export function parseGitUrl(url: string): IGitHubContextSource {
+  let match = url.match(GIT_HTTPS_REGEX);
+
+  if (match) {
+    const [, host, owner, repo, rest] = match;
+
+    if (!GITLAB_HOSTS.includes(host!)) {
+      throw new Error(
+        `Unsupported Git host: ${host}. Only GitHub is supported.`,
+      );
+    }
+
+    let branch = "main";
+    let path = "";
+
+    if (rest) {
+      const parts = rest!.split("/").filter(Boolean);
+
+      if (parts.length >= 2 && parts[0] === "tree") {
+        branch = parts[1]!;
+        path = parts.slice(2).join("/");
+      } else {
+        path = parts.join("/");
+      }
+    }
+
+    return { owner: owner!, repo: repo!.replace(/\.git$/, ""), branch, path };
+  }
+
+  match = url.match(GIT_SSH_REGEX);
+
+  if (match) {
+    const [, host, owner, repo, rest] = match;
+
+    if (!GITLAB_HOSTS.includes(host!)) {
+      throw new Error(
+        `Unsupported Git host: ${host}. Only GitHub is supported.`,
+      );
+    }
+
+    let branch = "main";
+    let path = "";
+
+    if (rest) {
+      const parts = rest!.split("/").filter(Boolean);
+
+      if (parts.length >= 2 && parts[0] === "tree") {
+        branch = parts[1]!;
+        path = parts.slice(2).join("/");
+      } else {
+        path = parts.join("/");
+      }
+    }
+
+    return { owner: owner!, repo: repo!.replace(/\.git$/, ""), branch, path };
+  }
+
+  throw new Error(
+    `Invalid Git URL: ${url}. Expected formats: https://github.com/owner/repo, https://github.com/owner/repo.git, or git@github.com:owner/repo.git`,
+  );
+}

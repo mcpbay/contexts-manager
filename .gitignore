@@ -6,3 +6,4 @@ mcp-config.json
 AGENTS.md
 node_modules
 */*.lock
+!/context/AGENTS.md

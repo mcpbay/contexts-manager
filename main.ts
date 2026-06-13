@@ -20,7 +20,9 @@ import { mkdirSync, removeSync } from "./src/utils/fs.util.ts";
 import {
   type IGitHubContextSource,
   downloadGitHubContext,
+  isStandardGitUrl,
   parseGitHubURI,
+  parseGitUrl,
 } from "./src/utils/download-github-context.util.ts";
 import type { IContextConfig } from "./src/interfaces/mod.ts";
 import { isContextProjectFolder } from "./src/validators/is-context-project-folder.validator.ts";
@@ -67,10 +69,12 @@ export class MCPContext {
 
     let loadPath = path;
 
-    if (path.startsWith("github://")) {
+    if (path.startsWith("github://") || isStandardGitUrl(path)) {
       crashIfNot(this.#githubOptions?.allowGithubContext, "Github context is not allowed.");
 
-      const source = parseGitHubURI(path);
+      const source = path.startsWith("github://")
+        ? parseGitHubURI(path)
+        : parseGitUrl(path);
 
       if (this.#githubOptions?.githubToken) {
         source.token = this.#githubOptions?.githubToken;
@@ -406,7 +410,7 @@ export async function loadContextFromGitHub(
   });
 
   const path = typeof args.source === "string"
-    ? args.source
+    ? (isStandardGitUrl(args.source) ? args.source : args.source)
     : `github://${args.source.owner}/${args.source.repo}${args.source.branch && args.source.branch !== "main"
       ? `/tree/${args.source.branch}`
       : ""
