@@ -2,6 +2,7 @@ import { dirname } from "@std/path";
 import { generateTempFile } from "./generate-temp-file.util.ts";
 import { readFile } from "./read-file.util.ts";
 import { createDenoCommand, removeSync } from "./fs.util.ts";
+import { readTextFile } from "./read-text-file.util.ts";
 
 export interface ITSExecuteOptions {
   importsCwd: URL | string;
@@ -16,6 +17,7 @@ export interface ITSExecuteOptions {
   };
   extraArguments: string[];
   timeout: number;
+  tempFile?: boolean;
   configFilePath?: string;
   envFilePath?: string;
   invoke?: {
@@ -24,7 +26,7 @@ export interface ITSExecuteOptions {
   };
 }
 
-export async function executeTypeScriptFile(
+export async function denoRun(
   scriptPath: string,
   options: ITSExecuteOptions,
 ) {
@@ -35,23 +37,27 @@ export async function executeTypeScriptFile(
     extraArguments,
     configFilePath,
     envFilePath,
+    tempFile
   } = options;
   const args: string[] = ["run"];
-  let code = await readFile(scriptPath);
+  let code = readTextFile(scriptPath);
 
   if (invoke) {
     const stringifiedArguments = JSON.stringify(invoke.arguments);
     const fnName = invoke.function;
 
     code += `
-;const _mcpb_result = await ${fnName}(...${stringifiedArguments}); 
-if(_mcpb_result !== undefined) {
-  console.log(JSON.stringify(_mcpb_result));
-}`;
+;(async () => {
+  const result = await ${fnName}(...${stringifiedArguments}); 
+  if(result !== undefined) {
+    console.log(JSON.stringify(result));
+  }
+})();
+`;
   }
 
   const codeFilePath = generateTempFile(code);
-  const tempDir = dirname(codeFilePath);
+  const tempDir = tempFile ? dirname(codeFilePath) : dirname(scriptPath);
   const allowedReadDirs = new Set(permissions.allowedReadDirs);
 
   allowedReadDirs.add("./");
@@ -113,7 +119,6 @@ if(_mcpb_result !== undefined) {
 
   const decoder = new TextDecoder();
   const child = command.spawn();
-
   const timeoutId = setTimeout(() => {
     try {
       child.kill("SIGKILL");

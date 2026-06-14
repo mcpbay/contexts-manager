@@ -1,7 +1,7 @@
 import { expect, test } from "@libs/testing";
 import { join } from "@std/path";
 import { MCPContext } from "../main.ts";
-import type { ITSExecuteOptions } from "../src/utils/ts-execute.util.ts";
+import type { ITSExecuteOptions } from "../src/utils/deno-run.util.ts";
 import {
   makeTempDirSync,
   mkdirSync,

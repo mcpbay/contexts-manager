@@ -3,8 +3,8 @@ import { parseFrontMatter } from "./src/utils/parse-front-matter.util.ts";
 import { crashIfNot } from "./src/utils/crash-if-not.util.ts";
 import {
   type ITSExecuteOptions,
-  executeTypeScriptFile,
-} from "./src/utils/ts-execute.util.ts";
+  denoRun,
+} from "./src/utils/deno-run.util.ts";
 import * as z from "zod";
 import { toObject } from "./src/transformers/to-object.transformer.ts";
 import { isScriptResource } from "./src/validators/is-script-resource.validator.ts";
@@ -140,7 +140,7 @@ export class MCPContext {
 
     z.fromJSONSchema(tool.inputSchema as Record<string, unknown>).parse(args);
 
-    const { outMessage } = await executeTypeScriptFile(
+    const { outMessage } = await denoRun(
       tool.path,
       {
         ...options,
@@ -171,7 +171,7 @@ export class MCPContext {
     const isScript = isScriptResource(filePath);
 
     if (isScript) {
-      const { outMessage } = await executeTypeScriptFile(filePath, {
+      const { outMessage } = await denoRun(filePath, {
         ...options,
         configFilePath: resource.configFilePath ?? options.configFilePath,
         invoke: {

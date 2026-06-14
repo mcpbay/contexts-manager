@@ -3,9 +3,9 @@ import { toSnakeCase } from "./transformers/to-snake-case.transformer.ts";
 import type { IPrompt, IResource, ITool } from "@mcpbay/easy-mcp-server/types";
 import type { IContextConfig } from "./interfaces/mod.ts";
 import {
-  executeTypeScriptFile,
+  denoRun,
   type ITSExecuteOptions,
-} from "./utils/ts-execute.util.ts";
+} from "./utils/deno-run.util.ts";
 import { exists } from "./utils/exists.util.ts";
 import { crashIfNot } from "./utils/crash-if-not.util.ts";
 import { readJsonFromFile } from "./utils/read-json-from-file.util.ts";
@@ -242,7 +242,7 @@ async function listTools(
         `Context tool \`${filePath}\` requires a \`deno.json\` file in the context root.`,
       );
 
-      const { outMessage } = await executeTypeScriptFile(filePath, {
+      const { outMessage } = await denoRun(filePath, {
         ...options,
         invoke: {
           function: "toolMeta",
@@ -251,7 +251,6 @@ async function listTools(
       });
 
       const response = toObject<Record<string, unknown>>(outMessage);
-
       const parsedToolMeta = contextToolMetaJsonSchema.parse(response);
 
       tools.push({
@@ -322,7 +321,7 @@ async function listResources(
         `Context resource \`${filePath}\` requires a \`deno.json\` file in the context root.`,
       );
 
-      const result = await executeTypeScriptFile(filePath, {
+      const result = await denoRun(filePath, {
         ...options,
         invoke: {
           function: "resourceMeta",
@@ -398,7 +397,7 @@ async function listPrompts(
         `Context prompt \`${filePath}\` requires a \`deno.json\` file in the context root.`,
       );
 
-      const { outMessage } = await executeTypeScriptFile(filePath, {
+      const { outMessage } = await denoRun(filePath, {
         ...options,
         invoke: {
           function: "promptMeta",

@@ -1,8 +1,8 @@
 import { expect, test } from "@libs/testing";
 import {
-  executeTypeScriptFile,
+  denoRun,
   type ITSExecuteOptions,
-} from "../src/utils/ts-execute.util.ts";
+} from "../src/utils/deno-run.util.ts";
 import {
   makeTempFileSync,
   removeSync,
@@ -42,7 +42,7 @@ test("executeTypeScriptFile - response robustness (object)", async () => {
   };
 
   try {
-    const result = await executeTypeScriptFile(scriptPath, options);
+    const result = await denoRun(scriptPath, options);
     const parsed = JSON.parse(result.outMessage);
 
     expect(parsed).toEqual({ received: "hello world", status: "ok" });
@@ -84,28 +84,28 @@ test(
     };
 
     try {
-      const resString = await executeTypeScriptFile(scriptPath, {
+      const resString = await denoRun(scriptPath, {
         ...baseOptions,
         invoke: { function: "returnString", arguments: [] },
       });
 
       expect(resString.outMessage).toBe('"hello"');
 
-      const resNumber = await executeTypeScriptFile(scriptPath, {
+      const resNumber = await denoRun(scriptPath, {
         ...baseOptions,
         invoke: { function: "returnNumber", arguments: [] },
       });
 
       expect(resNumber.outMessage).toBe("123");
 
-      const resBoolean = await executeTypeScriptFile(scriptPath, {
+      const resBoolean = await denoRun(scriptPath, {
         ...baseOptions,
         invoke: { function: "returnBoolean", arguments: [] },
       });
 
       expect(resBoolean.outMessage).toBe("true");
 
-      const resNull = await executeTypeScriptFile(scriptPath, {
+      const resNull = await denoRun(scriptPath, {
         ...baseOptions,
         invoke: { function: "returnNull", arguments: [] },
       });
@@ -166,7 +166,7 @@ test(
     };
 
     try {
-      const result = await executeTypeScriptFile(scriptPath, options);
+      const result = await denoRun(scriptPath, options);
 
       expect(result.outMessage).toBe('"from-import-map"');
     } finally {
@@ -215,7 +215,7 @@ test("executeTypeScriptFile - without config and env paths", async () => {
   };
 
   try {
-    const result = await executeTypeScriptFile(scriptPath, options);
+    const result = await denoRun(scriptPath, options);
 
     expect(result.outMessage).toBe('"world"');
   } finally {

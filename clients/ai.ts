@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import * as z from "zod";
 import { MCPContext } from "../main.ts";
-import type { ITSExecuteOptions } from "../src/utils/ts-execute.util.ts";
+import type { ITSExecuteOptions } from "../src/utils/deno-run.util.ts";
 
 export interface IMCPContextAiOptions extends ITSExecuteOptions {
   ignore?: {

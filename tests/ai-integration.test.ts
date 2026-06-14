@@ -1,7 +1,7 @@
 import { expect, test } from "@libs/testing";
 import { join } from "@std/path";
 import { loadMCP } from "../clients/ai.ts";
-import type { ITSExecuteOptions } from "../src/utils/ts-execute.util.ts";
+import type { ITSExecuteOptions } from "../src/utils/deno-run.util.ts";
 import { generateText } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import {
@@ -172,7 +172,7 @@ Resource content here`,
     expect(result.steps.length > 0).toBe(true);
   } finally {
     try {
-      removeSync(tempDir);
+      // removeSync(tempDir);
     } catch {
       // empty
     }

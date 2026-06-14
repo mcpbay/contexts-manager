@@ -1,5 +1,5 @@
 import type { IPrompt, IResource, ITool } from "@mcpbay/easy-mcp-server/types";
-import type { ITSExecuteOptions } from "../utils/ts-execute.util.ts";
+import type { ITSExecuteOptions } from "../utils/deno-run.util.ts";
 
 export interface IContextConfig {
   /**
