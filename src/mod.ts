@@ -15,6 +15,7 @@ import { toObject } from "./transformers/to-object.transformer.ts";
 import { parseFrontMatter } from "./utils/parse-front-matter.util.ts";
 import { readTextFile } from "./utils/read-text-file.util.ts";
 import { isUndefined } from "@online/is";
+import { resolvePath } from "./utils/resolve-path.util.ts";
 
 export const MCPBAY_CONTEXTS_MANAGER_CONTEXT_TYPE = "mcpbay-contexts-manager";
 
@@ -110,9 +111,9 @@ export async function prepareContext(
   path: string,
   options: Omit<ITSExecuteOptions, "permissions">,
 ): Promise<IPreparedContextResponse> {
-  const agentsMdPath = `${path}/AGENTS.md`;
-  const contextConfigPath = `${path}/context.json`;
-  const denoConfigPath = `${path}/deno.json`;
+  const agentsMdPath = resolvePath('./AGENTS.md', path);
+  const contextConfigPath = resolvePath('./context.json', path);
+  const denoConfigPath = resolvePath('./deno.json', path);
   const isContextDirPresent = exists(path, true);
   const isContextConfigPresent = exists(contextConfigPath);
   const isAgentsMdPresent = exists(agentsMdPath);

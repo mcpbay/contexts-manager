@@ -1,8 +1,8 @@
-import { fromFileUrl, isAbsolute, join } from "@std/path";
+import { fromFileUrl, isAbsolute, join, resolve } from "@std/path";
 import { isValidFileURI } from "../validators/is-valid-file-uri.validator.ts";
 import { cwd } from "./fs.util.ts";
 
-export function resolvePath(path: string | URL, basePath?: string) {
+export function resolvePath(path: string | URL, basePath?: string | URL): string {
   const isPathUrl = path instanceof URL;
 
   if (isPathUrl) {
@@ -36,5 +36,5 @@ export function resolvePath(path: string | URL, basePath?: string) {
 
   const base = basePath ?? cwd();
 
-  return join(base, path);
+  return resolve(resolvePath(base), path);
 }

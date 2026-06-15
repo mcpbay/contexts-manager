@@ -38,10 +38,11 @@ export function readDirSync(resolvedPath: string) {
   return dirEntries;
 }
 
-export function makeTempFileSync(suffix: string) {
+export function makeTempFileSync(suffix: string, dirPath?: string) {
   const uniqueId = `${Date.now()}-${++tempCounter}-${Math.random().toString(36).slice(2, 8)
     }`;
-  const filePath = path.join(os.tmpdir(), `mcpb-${uniqueId}.${suffix}`);
+  const baseDir = dirPath ?? os.tmpdir();
+  const filePath = path.join(baseDir, `mcpb-${uniqueId}.${suffix}`);
 
   fs.writeFileSync(filePath, "", "utf-8");
 

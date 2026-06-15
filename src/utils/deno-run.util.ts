@@ -1,8 +1,8 @@
 import { dirname } from "@std/path";
 import { generateTempFile } from "./generate-temp-file.util.ts";
-import { readFile } from "./read-file.util.ts";
 import { createDenoCommand, removeSync } from "./fs.util.ts";
 import { readTextFile } from "./read-text-file.util.ts";
+import { resolvePath } from "./resolve-path.util.ts";
 
 export interface ITSExecuteOptions {
   importsCwd: URL | string;
@@ -37,8 +37,11 @@ export async function denoRun(
     extraArguments,
     configFilePath,
     envFilePath,
-    tempFile
+    tempFile,
+    projectCwd,
+    importsCwd
   } = options;
+  const realPath = dirname(resolvePath(scriptPath, importsCwd));
   const args: string[] = ["run"];
   let code = readTextFile(scriptPath);
 
@@ -56,11 +59,12 @@ export async function denoRun(
 `;
   }
 
-  const codeFilePath = generateTempFile(code);
-  const tempDir = tempFile ? dirname(codeFilePath) : dirname(scriptPath);
+  const codeFilePath = generateTempFile(code, realPath);
+  const tempDir = realPath;
   const allowedReadDirs = new Set(permissions.allowedReadDirs);
+  const resolvedImportsCwd = resolvePath("./", importsCwd);
 
-  allowedReadDirs.add("./");
+  allowedReadDirs.add(resolvedImportsCwd);
   allowedReadDirs.add(tempDir);
 
   const allowedReadDirsJoined = Array.from(allowedReadDirs).join(",");
@@ -113,31 +117,34 @@ export async function denoRun(
 
   args.push(codeFilePath);
 
-  const command = createDenoCommand(args, {
-    cwd: options.projectCwd,
-  });
+  try {
+    const command = createDenoCommand(args, {
+      cwd: projectCwd,
+    });
 
-  const decoder = new TextDecoder();
-  const child = command.spawn();
-  const timeoutId = setTimeout(() => {
-    try {
-      child.kill("SIGKILL");
-    } catch {
-      // empty
+    const decoder = new TextDecoder();
+    const child = command.spawn();
+    const timeoutId = setTimeout(() => {
+      try {
+        child.kill("SIGKILL");
+      } catch {
+        // empty
+      }
+    }, timeout);
+
+    const { success, stderr, stdout } = await child.output();
+
+    clearTimeout(timeoutId);
+
+    if (!success) {
+      const errorMessage = decoder.decode(stderr);
+      throw new Error(`${errorMessage}\nOn file: ${scriptPath}`);
     }
-  }, timeout);
 
-  const { success, stderr, stdout } = await child.output();
+    const outMessage = decoder.decode(stdout).trim();
 
-  clearTimeout(timeoutId);
-
-  if (!success) {
+    return { outMessage };
+  } finally {
     removeSync(codeFilePath);
-    const errorMessage = decoder.decode(stderr);
-    throw new Error(`${errorMessage}\nOn file: ${scriptPath}`);
   }
-
-  const outMessage = decoder.decode(stdout).trim();
-
-  return { outMessage, codeFilePath };
 }
