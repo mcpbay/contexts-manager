@@ -99,10 +99,16 @@ export interface IPreparedResource extends IResource {
   configFilePath?: string;
 }
 
+export interface IPreparedPrompt extends IPrompt {
+  type: "script" | "markdown";
+  path: string;
+  configFilePath?: string;
+}
+
 export interface IPreparedContextResponse {
   resources: IPreparedResource[];
   tools: IPreparedTool[];
-  prompts: IPrompt[];
+  prompts: IPreparedPrompt[];
   agents: string;
   contextConfig: IContextConfig;
 }
@@ -119,10 +125,7 @@ export async function prepareContext(
   const isAgentsMdPresent = exists(agentsMdPath);
 
   crashIfNot(isContextDirPresent, `Context dir \`${path}\` does not exist.`);
-  crashIfNot(
-    isContextConfigPresent,
-    `Context config \`${contextConfigPath}\` does not exist.`,
-  );
+  crashIfNot(isContextConfigPresent, `Context config \`${contextConfigPath}\` does not exist.`);
 
   const agents = isAgentsMdPresent
     ? readTextFile(agentsMdPath)
@@ -136,8 +139,7 @@ export async function prepareContext(
     `Context type \`${contextType}\` is not supported.`
   );
 
-  const allowedEnvironments =
-    contextConfig.deno?.permissions?.allowedEnvironments ?? [];
+  const allowedEnvironments = contextConfig.deno?.permissions?.allowedEnvironments ?? [];
   const hasDenoConfig = exists(denoConfigPath);
 
   // for (const env of allowedEnvironments) {
@@ -279,6 +281,19 @@ async function listTools(
   return tools;
 }
 
+function normalizeUri(uri: unknown): string {
+  if (typeof uri !== "string") {
+    return "";
+  }
+
+  if (uri.startsWith("file://")) {
+    return uri;
+  }
+
+  const normalized = uri.replace(/\\/g, "/");
+  return `file:///${normalized}`;
+}
+
 async function listResources(
   basePath: string,
   options: ITSExecuteOptions,
@@ -311,7 +326,7 @@ async function listResources(
         description: data.description,
         name: data.name,
         mimeType: data.mimeType ?? "text/markdown",
-        uri: filePath,
+        uri: normalizeUri(filePath),
         title: data.title,
         path: filePath,
         configFilePath: options.configFilePath,
@@ -339,7 +354,7 @@ async function listResources(
         description: parsedResourceMeta.description,
         name: parsedResourceMeta.name,
         mimeType: parsedResourceMeta.mimeType,
-        uri: filePath,
+        uri: normalizeUri(filePath),
         title: parsedResourceMeta.title,
         path: filePath,
         configFilePath: options.configFilePath,
@@ -362,7 +377,7 @@ async function listResources(
 async function listPrompts(
   basePath: string,
   options: ITSExecuteOptions,
-  prompts: IPrompt[] = [],
+  prompts: IPreparedPrompt[] = [],
   hasDenoConfig = false,
 ) {
   const isBasePathExists = exists(basePath, true);
@@ -380,17 +395,18 @@ async function listPrompts(
     const isTypeScriptFile = fileInfo.extension === ".ts";
 
     if (isMarkdownFile) {
-      const parsedFrontMatter = await parseFrontMatter(filePath);
-      const { success, data } = contextPromptMetaJsonSchema.safeParse(
-        parsedFrontMatter.data,
-      );
+      const { data: frontMatter, content } = await parseFrontMatter(filePath);
+      const { success, data } = contextPromptMetaJsonSchema.safeParse(frontMatter);
 
       crashIfNot(success, "Invalid prompt data.");
 
       prompts.push({
+        type: "markdown",
         name: data.name,
         description: data.description,
         title: data.title,
+        path: filePath,
+        arguments: [],
       });
     } else if (isTypeScriptFile) {
       crashIfNot(
@@ -411,9 +427,12 @@ async function listPrompts(
         .parse(response);
 
       prompts.push({
+        type: "script",
         name: parsedPromptMeta.name,
         description: parsedPromptMeta.description,
         title: parsedPromptMeta.title,
+        path: filePath,
+        arguments: [],
       });
     }
   }

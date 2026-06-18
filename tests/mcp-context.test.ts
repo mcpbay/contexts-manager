@@ -190,7 +190,7 @@ Content 3`,
 
       const mcpContext = new MCPContext();
       const options: ITSExecuteOptions = {
-        importsCwd: projectRoot,
+        importsCwd: context1Dir,
         projectCwd: projectCwdDir,
         permissions: {
           allowedReadDirs: [tempDir, projectRoot],
@@ -226,6 +226,7 @@ Content 3`,
       expect(r2).toBeTruthy();
       expect(r3).toBeTruthy();
 
+      options.importsCwd = context1Dir;
       const resp1 = await mcpContext.executeTool("tool1", {}, options);
 
       // deno-lint-ignore no-explicit-any
@@ -233,6 +234,7 @@ Content 3`,
       // deno-lint-ignore no-explicit-any
       expect((resp1 as any).cwd).toBe(projectCwdDir);
 
+      options.importsCwd = context2Dir;
       const resp2 = await mcpContext.executeTool("tool2", {}, options);
 
       // deno-lint-ignore no-explicit-any

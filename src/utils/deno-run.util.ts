@@ -3,6 +3,7 @@ import { generateTempFile } from "./generate-temp-file.util.ts";
 import { createDenoCommand, removeSync } from "./fs.util.ts";
 import { readTextFile } from "./read-text-file.util.ts";
 import { resolvePath } from "./resolve-path.util.ts";
+import { readJsonFromFile } from "./read-json-from-file.util.ts";
 
 export interface ITSExecuteOptions {
   importsCwd: URL | string;
@@ -26,6 +27,58 @@ export interface ITSExecuteOptions {
   };
 }
 
+export interface IDenoJson {
+  imports?: Record<string, string>;
+}
+
+function generateTempFolder() {
+  const tempDir = Deno.makeTempDirSync({ prefix: 'mcpb-temp-' });
+  return tempDir;
+}
+
+function fixPath(path: string) {
+  return "file://" + path.replace(/\\/g, "/");
+}
+
+export function fixImports(_imports: Record<string, string>, importsCwd: string | URL) {
+  const imports: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(_imports)) {
+    const isPrefixed =
+      value.startsWith("jsr:")
+      || value.startsWith("file:")
+      || value.startsWith("https:")
+      || value.startsWith("http:")
+      || value.startsWith("data:")
+      || value.startsWith("blob:")
+      || value.startsWith("npm:");
+
+    imports[key] = isPrefixed ? value : fixPath(resolvePath(value, importsCwd));
+  }
+
+  return imports;
+}
+
+function getResolvedConfigFileImports(options: ITSExecuteOptions) {
+  const { configFilePath, importsCwd } = options;
+
+  if (!configFilePath) {
+    return {
+      tempFolder: null,
+      tempDenoJson: null,
+    };
+  }
+
+  const tempFolder = generateTempFolder();
+  const config = readJsonFromFile<IDenoJson>(configFilePath);
+
+  config.imports = fixImports(config.imports ?? {}, importsCwd);
+
+  const tempDenoJson = generateTempFile(JSON.stringify(config, null, 2), tempFolder, "json");
+
+  return { tempFolder, tempDenoJson };
+}
+
 export async function denoRun(
   scriptPath: string,
   options: ITSExecuteOptions,
@@ -35,13 +88,11 @@ export async function denoRun(
     timeout,
     invoke,
     extraArguments,
-    configFilePath,
     envFilePath,
-    tempFile,
     projectCwd,
     importsCwd
   } = options;
-  const realPath = dirname(resolvePath(scriptPath, importsCwd));
+  const resolvedScriptPath = dirname(resolvePath(scriptPath, projectCwd));
   const args: string[] = ["run"];
   let code = readTextFile(scriptPath);
 
@@ -59,13 +110,13 @@ export async function denoRun(
 `;
   }
 
-  const codeFilePath = generateTempFile(code, realPath);
-  const tempDir = realPath;
+  const { tempDenoJson: resolvedConfigFilePath, tempFolder } = getResolvedConfigFileImports(options);
+  const codeFilePath = generateTempFile(code, resolvedScriptPath);
   const allowedReadDirs = new Set(permissions.allowedReadDirs);
   const resolvedImportsCwd = resolvePath("./", importsCwd);
 
   allowedReadDirs.add(resolvedImportsCwd);
-  allowedReadDirs.add(tempDir);
+  allowedReadDirs.add(resolvedScriptPath);
 
   const allowedReadDirsJoined = Array.from(allowedReadDirs).join(",");
 
@@ -74,7 +125,7 @@ export async function denoRun(
   const allowedWriteDirs = new Set(permissions.allowedWriteDirs);
 
   allowedWriteDirs.add("./");
-  allowedWriteDirs.add(tempDir);
+  allowedWriteDirs.add(resolvedScriptPath);
 
   const allowedWriteDirsJoined = Array.from(allowedWriteDirs).join(",");
 
@@ -106,8 +157,8 @@ export async function denoRun(
   args.push(`--allow-env=${allowedEnvironmentsJoined}`);
   args.push(...extraArguments);
 
-  if (configFilePath) {
-    args.push(`--config=${configFilePath}`);
+  if (resolvedConfigFilePath) {
+    args.push(`--config=${resolvedConfigFilePath}`);
   }
 
   if (envFilePath) {
@@ -146,5 +197,9 @@ export async function denoRun(
     return { outMessage };
   } finally {
     removeSync(codeFilePath);
+
+    if (tempFolder) {
+      removeSync(tempFolder);
+    }
   }
 }

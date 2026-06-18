@@ -1,14 +1,16 @@
-import type { IPrompt } from "@mcpbay/easy-mcp-server/types";
 import { parseFrontMatter } from "./src/utils/parse-front-matter.util.ts";
 import { crashIfNot } from "./src/utils/crash-if-not.util.ts";
 import {
+  type IDenoJson,
   type ITSExecuteOptions,
   denoRun,
+  fixImports,
 } from "./src/utils/deno-run.util.ts";
 import * as z from "zod";
 import { toObject } from "./src/transformers/to-object.transformer.ts";
 import { isScriptResource } from "./src/validators/is-script-resource.validator.ts";
 import {
+  type IPreparedPrompt,
   type IPreparedResource,
   type IPreparedTool,
   MCPBAY_CONTEXTS_MANAGER_CONTEXT_TYPE,
@@ -35,14 +37,14 @@ export interface IGithubOptions {
 
 export interface IMCPContextOptions extends IGithubOptions { }
 
-export type { IContextConfig };
-export { isContextProjectFolder };
+export type { IContextConfig, ITSExecuteOptions, IDenoJson };
+export { isContextProjectFolder, fixImports, parseFrontMatter };
 
 export class MCPContext {
   public readonly agents: string = ""; // This will be updated later, with `loadContext` method.
   public readonly tools: IPreparedTool[] = [];
   public readonly resources: IPreparedResource[] = [];
-  public readonly prompts: IPrompt[] = [];
+  public readonly prompts: IPreparedPrompt[] = [];
   readonly #loadedPaths = new Set<string>();
   readonly #tempDirs = new Set<string>();
   readonly #cleanupRegistry: FinalizationRegistry<string>;
@@ -200,6 +202,50 @@ export class MCPContext {
 
     return parseDFrontMatter.content.trim();
   }
+
+  async consumePrompt(name: string, args: Record<string, unknown>, options: ITSExecuteOptions): Promise<string> {
+    const prompt = this.prompts.find((prompt) => prompt.name === name);
+
+    crashIfNot(prompt, `Prompt \`${name}\` not found.`);
+
+    if (prompt.type === "markdown") {
+      const { content } = await parseFrontMatter(prompt.path);
+      const extractedArgs = content.match(/{{(.+?)}}/g);
+
+      if (extractedArgs === null) {
+        return content;
+      }
+
+      return content.replaceAll(
+        /{{(.+?)}}/g,
+        JSON.stringify(args[extractedArgs[0].replace("{{", "").replace("}}", "")]),
+      );
+    }
+
+    const { outMessage } = await denoRun(prompt.path, {
+      ...options,
+      configFilePath: prompt.configFilePath ?? options.configFilePath,
+      invoke: {
+        function: "promptHandler",
+        arguments: [args],
+      },
+    });
+
+    const promptResponse = toObject(outMessage);
+    const isPromptResponseNull = !promptResponse;
+    const isPromptResponseNotString = typeof promptResponse !== "string";
+
+    crashIfNot(
+      !isPromptResponseNull,
+      `Prompt \`${name}\` did not return a value.`,
+    );
+    crashIfNot(
+      !isPromptResponseNotString,
+      `Prompt \`${name}\` did not return a string.`,
+    );
+
+    return promptResponse.trim();
+  }
 }
 
 export function createEmptyContext(path: string) {
@@ -218,7 +264,8 @@ export function createEmptyContext(path: string) {
   };
 
   const DEFAULT_CONTEXT_JSON_CONTENT = {
-    name: "test_context",
+    name: "Text context",
+    slug: "test-context",
     version: "1.0.0",
     description: "A useful context for MCPBay!",
     author: "GodPerson_I",

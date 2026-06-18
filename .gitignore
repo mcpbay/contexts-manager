@@ -7,3 +7,5 @@ AGENTS.md
 node_modules
 */*.lock
 !/context/AGENTS.md
+.env.local
+.env
