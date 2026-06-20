@@ -395,7 +395,7 @@ async function listPrompts(
     const isTypeScriptFile = fileInfo.extension === ".ts";
 
     if (isMarkdownFile) {
-      const { data: frontMatter, content } = await parseFrontMatter(filePath);
+      const { data: frontMatter } = await parseFrontMatter(filePath);
       const { success, data } = contextPromptMetaJsonSchema.safeParse(frontMatter);
 
       crashIfNot(success, "Invalid prompt data.");

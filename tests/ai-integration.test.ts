@@ -7,9 +7,7 @@ import { MockLanguageModelV3 } from "ai/test";
 import {
   cwd,
   makeTempDirSync,
-  mkdirSync,
-  removeSync,
-  writeTextFileSync,
+  mkdirSync, writeTextFileSync
 } from "../src/utils/fs.util.ts";
 import { DENO_PERMISSIONS } from "./constants.ts";
 

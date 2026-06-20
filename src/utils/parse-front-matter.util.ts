@@ -8,7 +8,7 @@ export interface IFrontMatterResult<T = Record<string, unknown>> {
 
 export async function parseFrontMatter<T = Record<string, unknown>>(
   filePath: string,
-) {
+): Promise<IFrontMatterResult<T>> {
   const content = await readFile(filePath);
   const frontMatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
   const match = content.match(frontMatterRegex);

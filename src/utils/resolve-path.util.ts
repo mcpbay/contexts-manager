@@ -1,4 +1,4 @@
-import { fromFileUrl, isAbsolute, join, resolve } from "@std/path";
+import { fromFileUrl, isAbsolute, resolve } from "@std/path";
 import { isValidFileURI } from "../validators/is-valid-file-uri.validator.ts";
 import { cwd } from "./fs.util.ts";
 
