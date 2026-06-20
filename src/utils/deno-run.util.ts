@@ -4,6 +4,7 @@ import { createDenoCommand, removeSync } from "./fs.util.ts";
 import { readTextFile } from "./read-text-file.util.ts";
 import { resolvePath } from "./resolve-path.util.ts";
 import { readJsonFromFile } from "./read-json-from-file.util.ts";
+import { randomUUID } from "node:crypto";
 
 export interface ITSExecuteOptions {
   importsCwd: URL | string;
@@ -32,7 +33,7 @@ export interface IDenoJson {
 }
 
 function generateTempFolder() {
-  const tempDir = Deno.makeTempDirSync({ prefix: 'mcpb-temp-' });
+  const tempDir = Deno.makeTempDirSync({ prefix: `mcpb-temp-${randomUUID()}` });
   return tempDir;
 }
 
@@ -99,15 +100,18 @@ export async function denoRun(
   if (invoke) {
     const stringifiedArguments = JSON.stringify(invoke.arguments);
     const fnName = invoke.function;
-
-    code += `
+    const injectableCode = `
 ;(async () => {
   const result = await ${fnName}(...${stringifiedArguments}); 
   if(result !== undefined) {
     console.log(JSON.stringify(result));
   }
 })();
-`;
+    `.trim();
+
+    if (!code.includes(injectableCode)) {
+      code += "\n" + injectableCode;
+    }
   }
 
   const { tempDenoJson: resolvedConfigFilePath, tempFolder } = getResolvedConfigFileImports(options);
@@ -152,9 +156,7 @@ export async function denoRun(
   allowedEnvironments.add("TMP");
   allowedEnvironments.add("TEMP");
 
-  const allowedEnvironmentsJoined = Array.from(allowedEnvironments).join(",");
 
-  args.push(`--allow-env=${allowedEnvironmentsJoined}`);
   args.push(...extraArguments);
 
   if (resolvedConfigFilePath) {
@@ -164,6 +166,9 @@ export async function denoRun(
   if (envFilePath) {
     args.push(`--env=${envFilePath}`);
     args.push(`--allow-env`);
+  } else {
+    const allowedEnvironmentsJoined = Array.from(allowedEnvironments).join(",");
+    args.push(`--allow-env=${allowedEnvironmentsJoined}`);
   }
 
   args.push(codeFilePath);
@@ -193,11 +198,11 @@ export async function denoRun(
     }
 
     const outMessage = decoder.decode(stdout).trim();
+    const fullCmd = `deno ${args.map(a => a.replaceAll("\\", "/")).join(" ")}`;
 
-    return { outMessage };
+    return { outMessage, fullCmd };
   } finally {
     removeSync(codeFilePath);
-
     if (tempFolder) {
       removeSync(tempFolder);
     }
