@@ -16,6 +16,7 @@ import { parseFrontMatter } from "./utils/parse-front-matter.util.ts";
 import { readTextFile } from "./utils/read-text-file.util.ts";
 import { isUndefined } from "@online/is";
 import { resolvePath } from "./utils/resolve-path.util.ts";
+import { TEMP_FILES_PREFIX } from "./constants/temp-files-prefix.constant.ts";
 
 export const MCPBAY_CONTEXTS_MANAGER_CONTEXT_TYPE = "mcpbay-contexts-manager";
 
@@ -238,6 +239,11 @@ async function listTools(
 
   for (const file of files.files) {
     const filePath = `${basePath}/${file}`;
+
+    if (file.startsWith(TEMP_FILES_PREFIX)) {
+      continue;
+    }
+
     const fileInfo = extractFilePathData(filePath);
     const isTypeScriptFile = fileInfo.extension === ".ts";
 

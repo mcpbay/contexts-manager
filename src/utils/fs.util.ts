@@ -5,6 +5,7 @@ import * as cp from "node:child_process";
 import { Buffer } from "node:buffer";
 import { getRuntime, Runtime } from "@online/runtime";
 import { randomUUID } from "node:crypto";
+import { TEMP_FILES_PREFIX } from "../constants/temp-files-prefix.constant.ts";
 
 let tempCounter = 0;
 
@@ -47,7 +48,7 @@ export interface IMakeTempFileSyncOptions {
 export function makeTempFileSync(suffix: string, options?: Partial<IMakeTempFileSyncOptions>) {
   const uniqueId = randomUUID();
   const baseDir = options?.dirPath ?? os.tmpdir();
-  const filePath = path.join(baseDir, `mcpb-${uniqueId}.${suffix}`);
+  const filePath = path.join(baseDir, `${TEMP_FILES_PREFIX}-${uniqueId}.${suffix}`);
 
   fs.writeFileSync(filePath, options?.content ?? "", "utf-8");
 

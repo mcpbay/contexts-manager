@@ -100,15 +100,18 @@ export async function denoRun(
   if (invoke) {
     const stringifiedArguments = JSON.stringify(invoke.arguments);
     const fnName = invoke.function;
-
-    code += `
+    const injectableCode = `
 ;(async () => {
   const result = await ${fnName}(...${stringifiedArguments}); 
   if(result !== undefined) {
     console.log(JSON.stringify(result));
   }
 })();
-`;
+    `.trim();
+
+    if (!code.includes(injectableCode)) {
+      code += "\n" + injectableCode;
+    }
   }
 
   const { tempDenoJson: resolvedConfigFilePath, tempFolder } = getResolvedConfigFileImports(options);
@@ -199,9 +202,9 @@ export async function denoRun(
 
     return { outMessage, fullCmd };
   } finally {
-    // removeSync(codeFilePath);
-    // if (tempFolder) {
-    //   removeSync(tempFolder);
-    // }
+    removeSync(codeFilePath);
+    if (tempFolder) {
+      removeSync(tempFolder);
+    }
   }
 }
