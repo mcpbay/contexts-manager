@@ -4,6 +4,7 @@ import * as path from "node:path";
 import * as cp from "node:child_process";
 import { Buffer } from "node:buffer";
 import { getRuntime, Runtime } from "@online/runtime";
+import { randomUUID } from "node:crypto";
 
 let tempCounter = 0;
 
@@ -38,13 +39,17 @@ export function readDirSync(resolvedPath: string) {
   return dirEntries;
 }
 
-export function makeTempFileSync(suffix: string, dirPath?: string) {
-  const uniqueId = `${Date.now()}-${++tempCounter}-${Math.random().toString(36).slice(2, 8)
-    }`;
-  const baseDir = dirPath ?? os.tmpdir();
+export interface IMakeTempFileSyncOptions {
+  dirPath: string;
+  content: string | NodeJS.ArrayBufferView;
+}
+
+export function makeTempFileSync(suffix: string, options?: Partial<IMakeTempFileSyncOptions>) {
+  const uniqueId = randomUUID();
+  const baseDir = options?.dirPath ?? os.tmpdir();
   const filePath = path.join(baseDir, `mcpb-${uniqueId}.${suffix}`);
 
-  fs.writeFileSync(filePath, "", "utf-8");
+  fs.writeFileSync(filePath, options?.content ?? "", "utf-8");
 
   return filePath;
 }
