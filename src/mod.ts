@@ -16,6 +16,7 @@ import { parseFrontMatter } from "./utils/parse-front-matter.util.ts";
 import { readTextFile } from "./utils/read-text-file.util.ts";
 import { isUndefined } from "@online/is";
 import { resolvePath } from "./utils/resolve-path.util.ts";
+import { TEMP_FILES_PREFIX } from "./constants/temp-files-prefix.constant.ts";
 
 export const MCPBAY_CONTEXTS_MANAGER_CONTEXT_TYPE = "mcpbay-contexts-manager";
 
@@ -167,7 +168,9 @@ export async function prepareContext(
     _options.configFilePath = denoConfigPath;
   }
 
-  contextConfigJsonSchema.parse(contextConfig);
+  const { success } = contextConfigJsonSchema.safeParse(contextConfig);
+
+  crashIfNot(success, "Invalid context config.");
 
   const resourcesPath = `${path}/resources`;
   const resources = await listResources(
@@ -236,6 +239,11 @@ async function listTools(
 
   for (const file of files.files) {
     const filePath = `${basePath}/${file}`;
+
+    if (file.startsWith(TEMP_FILES_PREFIX)) {
+      continue;
+    }
+
     const fileInfo = extractFilePathData(filePath);
     const isTypeScriptFile = fileInfo.extension === ".ts";
 
@@ -245,7 +253,7 @@ async function listTools(
         `Context tool \`${filePath}\` requires a \`deno.json\` file in the context root.`,
       );
 
-      const { outMessage } = await denoRun(filePath, {
+      const { outMessage, fullCmd } = await denoRun(filePath, {
         ...options,
         invoke: {
           function: "toolMeta",
@@ -254,7 +262,9 @@ async function listTools(
       });
 
       const response = toObject<Record<string, unknown>>(outMessage);
-      const parsedToolMeta = contextToolMetaJsonSchema.parse(response);
+      const { success, data: parsedToolMeta, error } = contextToolMetaJsonSchema.safeParse(response);
+
+      crashIfNot(success, `Invalid tool response. Tool path: \`${filePath}\`.\nError message: ${error?.message}\nFull command: ${fullCmd}`);
 
       tools.push({
         name: parsedToolMeta.name,
@@ -347,8 +357,10 @@ async function listResources(
 
       const response = toObject<Record<string, unknown>>(result.outMessage);
 
-      const parsedResourceMeta = contextResourceScriptMetaResponseJsonSchema
-        .parse(response);
+      const { success, data: parsedResourceMeta } = contextResourceScriptMetaResponseJsonSchema
+        .safeParse(response);
+
+      crashIfNot(success, `Invalid resource response. Resource path: \`${filePath}\`.`);
 
       resources.push({
         description: parsedResourceMeta.description,
@@ -423,8 +435,10 @@ async function listPrompts(
       });
 
       const response = toObject<Record<string, unknown>>(outMessage);
-      const parsedPromptMeta = contextPromptScriptMetaResponseJsonSchema
-        .parse(response);
+      const { success, data: parsedPromptMeta } = contextPromptScriptMetaResponseJsonSchema
+        .safeParse(response);
+
+      crashIfNot(success, `Invalid prompt response. Prompt path: \`${filePath}\`.`);
 
       prompts.push({
         type: "script",

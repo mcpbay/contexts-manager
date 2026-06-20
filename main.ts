@@ -134,7 +134,7 @@ export class MCPContext {
     args: Record<string, unknown>,
     options: ITSExecuteOptions,
   ): Promise<object | null> {
-    areEnvironmentVariablesSet(options?.permissions?.allowedEnvironments ?? []);
+    // areEnvironmentVariablesSet(options?.permissions?.allowedEnvironments ?? []);
 
     const tool = this.tools.find((tool) => tool.name === name);
 
@@ -163,7 +163,7 @@ export class MCPContext {
     name: string,
     options: ITSExecuteOptions,
   ): Promise<string> {
-    areEnvironmentVariablesSet(options?.permissions?.allowedEnvironments ?? []);
+    // areEnvironmentVariablesSet(options?.permissions?.allowedEnvironments ?? []);
 
     const resource = this.resources.find((resource) => resource.name === name);
 
