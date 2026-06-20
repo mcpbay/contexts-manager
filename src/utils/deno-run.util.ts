@@ -41,7 +41,7 @@ function fixPath(path: string) {
   return "file://" + path.replace(/\\/g, "/");
 }
 
-export function fixImports(_imports: Record<string, string>, importsCwd: string | URL) {
+export function fixImports(_imports: Record<string, string>, importsCwd: string | URL): Record<string, string> {
   const imports: Record<string, string> = {};
 
   for (const [key, value] of Object.entries(_imports)) {

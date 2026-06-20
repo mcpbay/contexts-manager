@@ -18,7 +18,7 @@ import {
 } from "./src/mod.ts";
 import { build } from "./src/utils/build.util.ts";
 import { exists } from "./src/utils/exists.util.ts";
-import { envHas, mkdirSync, removeSync } from "./src/utils/fs.util.ts";
+import { mkdirSync, removeSync } from "./src/utils/fs.util.ts";
 import {
   type IGitHubContextSource,
   downloadGitHubContext,
@@ -417,17 +417,6 @@ export interface ILoadAndExecuteToolArguments {
   toolName: string;
   args: Record<string, unknown>;
   options: ITSExecuteOptions;
-}
-
-function areEnvironmentVariablesSet(envs: string[]) {
-  for (const env of envs) {
-    const isEnvPresent = envHas(env);
-
-    crashIfNot(
-      isEnvPresent,
-      `Environment variable \`${env}\` is required but not set.`,
-    );
-  }
 }
 
 export async function loadAndExecuteTool(
