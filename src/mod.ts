@@ -236,6 +236,7 @@ async function listTools(
   }
 
   const files = getDirectoryContent(basePath);
+  const tasks: Promise<void>[] = [];
 
   for (const file of files.files) {
     const filePath = `${basePath}/${file}`;
@@ -253,30 +254,34 @@ async function listTools(
         `Context tool \`${filePath}\` requires a \`deno.json\` file in the context root.`,
       );
 
-      const { outMessage, fullCmd } = await denoRun(filePath, {
-        ...options,
-        invoke: {
-          function: "toolMeta",
-          arguments: [],
-        },
-      });
+      tasks.push(
+        denoRun(filePath, {
+          ...options,
+          invoke: {
+            function: "toolMeta",
+            arguments: [],
+          },
+        }).then(({ outMessage, fullCmd }) => {
+          const response = toObject<Record<string, unknown>>(outMessage);
+          const { success, data: parsedToolMeta, error } = contextToolMetaJsonSchema.safeParse(response);
 
-      const response = toObject<Record<string, unknown>>(outMessage);
-      const { success, data: parsedToolMeta, error } = contextToolMetaJsonSchema.safeParse(response);
+          crashIfNot(success, `Invalid tool response. Tool path: \`${filePath}\`.\nError message: ${error?.message}\nFull command: ${fullCmd}`);
 
-      crashIfNot(success, `Invalid tool response. Tool path: \`${filePath}\`.\nError message: ${error?.message}\nFull command: ${fullCmd}`);
-
-      tools.push({
-        name: parsedToolMeta.name,
-        title: parsedToolMeta.title,
-        description: parsedToolMeta.description,
-        inputSchema: parsedToolMeta.inputSchema,
-        outputSchema: parsedToolMeta.outputSchema,
-        path: filePath,
-        configFilePath: options.configFilePath,
-      });
+          tools.push({
+            name: parsedToolMeta.name,
+            title: parsedToolMeta.title,
+            description: parsedToolMeta.description,
+            inputSchema: parsedToolMeta.inputSchema,
+            outputSchema: parsedToolMeta.outputSchema,
+            path: filePath,
+            configFilePath: options.configFilePath,
+          });
+        }),
+      );
     }
   }
+
+  await Promise.all(tasks);
 
   for (const directory of files.folders) {
     const isIgnoredDirectory = directory.startsWith("@");
@@ -317,6 +322,7 @@ async function listResources(
   }
 
   const files = getDirectoryContent(basePath);
+  const tasks: Promise<void>[] = [];
 
   for (const file of files.files) {
     const filePath = `${basePath}/${file}`;
@@ -347,32 +353,36 @@ async function listResources(
         `Context resource \`${filePath}\` requires a \`deno.json\` file in the context root.`,
       );
 
-      const result = await denoRun(filePath, {
-        ...options,
-        invoke: {
-          function: "resourceMeta",
-          arguments: [],
-        },
-      });
+      tasks.push(
+        denoRun(filePath, {
+          ...options,
+          invoke: {
+            function: "resourceMeta",
+            arguments: [],
+          },
+        }).then((result) => {
+          const response = toObject<Record<string, unknown>>(result.outMessage);
 
-      const response = toObject<Record<string, unknown>>(result.outMessage);
+          const { success, data: parsedResourceMeta } = contextResourceScriptMetaResponseJsonSchema
+            .safeParse(response);
 
-      const { success, data: parsedResourceMeta } = contextResourceScriptMetaResponseJsonSchema
-        .safeParse(response);
+          crashIfNot(success, `Invalid resource response. Resource path: \`${filePath}\`.`);
 
-      crashIfNot(success, `Invalid resource response. Resource path: \`${filePath}\`.`);
-
-      resources.push({
-        description: parsedResourceMeta.description,
-        name: parsedResourceMeta.name,
-        mimeType: parsedResourceMeta.mimeType,
-        uri: normalizeUri(filePath),
-        title: parsedResourceMeta.title,
-        path: filePath,
-        configFilePath: options.configFilePath,
-      });
+          resources.push({
+            description: parsedResourceMeta.description,
+            name: parsedResourceMeta.name,
+            mimeType: parsedResourceMeta.mimeType,
+            uri: normalizeUri(filePath),
+            title: parsedResourceMeta.title,
+            path: filePath,
+            configFilePath: options.configFilePath,
+          });
+        }),
+      );
     }
   }
+
+  await Promise.all(tasks);
 
   for (const folder of files.folders) {
     await listResources(
@@ -399,6 +409,7 @@ async function listPrompts(
   }
 
   const files = getDirectoryContent(basePath);
+  const tasks: Promise<void>[] = [];
 
   for (const file of files.files) {
     const filePath = `${basePath}/${file}`;
@@ -426,30 +437,34 @@ async function listPrompts(
         `Context prompt \`${filePath}\` requires a \`deno.json\` file in the context root.`,
       );
 
-      const { outMessage } = await denoRun(filePath, {
-        ...options,
-        invoke: {
-          function: "promptMeta",
-          arguments: [],
-        },
-      });
+      tasks.push(
+        denoRun(filePath, {
+          ...options,
+          invoke: {
+            function: "promptMeta",
+            arguments: [],
+          },
+        }).then(({ outMessage }) => {
+          const response = toObject<Record<string, unknown>>(outMessage);
+          const { success, data: parsedPromptMeta } = contextPromptScriptMetaResponseJsonSchema
+            .safeParse(response);
 
-      const response = toObject<Record<string, unknown>>(outMessage);
-      const { success, data: parsedPromptMeta } = contextPromptScriptMetaResponseJsonSchema
-        .safeParse(response);
+          crashIfNot(success, `Invalid prompt response. Prompt path: \`${filePath}\`.`);
 
-      crashIfNot(success, `Invalid prompt response. Prompt path: \`${filePath}\`.`);
-
-      prompts.push({
-        type: "script",
-        name: parsedPromptMeta.name,
-        description: parsedPromptMeta.description,
-        title: parsedPromptMeta.title,
-        path: filePath,
-        arguments: [],
-      });
+          prompts.push({
+            type: "script",
+            name: parsedPromptMeta.name,
+            description: parsedPromptMeta.description,
+            title: parsedPromptMeta.title,
+            path: filePath,
+            arguments: [],
+          });
+        }),
+      );
     }
   }
+
+  await Promise.all(tasks);
 
   for (const folder of files.folders) {
     await listPrompts(

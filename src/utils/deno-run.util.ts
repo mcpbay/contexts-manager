@@ -41,6 +41,10 @@ function fixPath(path: string) {
   return "file://" + path.replace(/\\/g, "/");
 }
 
+function stripAnsi(str: string): string {
+  return str.replace(/\x1b\[[0-9;]*m/g, '');
+}
+
 export function fixImports(_imports: Record<string, string>, importsCwd: string | URL): Record<string, string> {
   const imports: Record<string, string> = {};
 
@@ -193,7 +197,7 @@ export async function denoRun(
     clearTimeout(timeoutId);
 
     if (!success) {
-      const errorMessage = decoder.decode(stderr);
+      const errorMessage = stripAnsi(decoder.decode(stderr));
       throw new Error(`${errorMessage}\nOn file: ${scriptPath}`);
     }
 
